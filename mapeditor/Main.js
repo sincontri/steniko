@@ -21,7 +21,7 @@ function Main() {
   // Create html mapcanvas handler
   mapcanvas = document.getElementById('mapcanvas');
   mapcanvas.width = window.innerWidth - 300;
-  mapcanvas.height = window.innerHeight;
+  mapcanvas.height = window.innerHeight + 300;
 
   // Get mapcanvas graphic context
   ctx = mapcanvas.getContext('2d');

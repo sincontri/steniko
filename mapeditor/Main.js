@@ -1,7 +1,6 @@
 function Main() {
   // Global Variables
   window.shapesSize = 15;
-  window.data = new Data();
   window.lastClickPoint = null;
   window.selectedNode = null;
   window.selectionColor = 'rgb(255,214,35)';

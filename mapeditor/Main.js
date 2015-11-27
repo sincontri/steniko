@@ -20,7 +20,7 @@ function Main() {
 
   // Create html mapcanvas handler
   mapcanvas = document.getElementById('mapcanvas');
-  mapcanvas.width = window.innerWidth - 100;
+  mapcanvas.width = /*window.innerWidth - 100*/600;
   mapcanvas.height = window.innerHeight;
 
   // Get mapcanvas graphic context

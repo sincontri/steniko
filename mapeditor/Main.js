@@ -20,8 +20,9 @@ function Main() {
 
   // Create html mapcanvas handler
   mapcanvas = document.getElementById('mapcanvas');
-  mapcanvas.width = /*window.innerWidth - 100*/600;
+  mapcanvas.width = window.innerWidth - 300;
   mapcanvas.height = window.innerHeight;
+  console.log('width: ' + mapcanvas.width + ' - ' + mapcanvas.height);
 
   // Get mapcanvas graphic context
   ctx = mapcanvas.getContext('2d');

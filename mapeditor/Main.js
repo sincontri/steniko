@@ -1,4 +1,10 @@
 function Main() {
+  window.mapId = location.search.split('mapId=')[1];
+  if (isNaN(window.mapId) === true) {
+    console.log('mapId is undefined');
+    return;
+  }
+
   // Global Variables
   window.shapesSize = 15;
   window.lastClickPoint = null;
@@ -20,7 +26,7 @@ function Main() {
   // Create html mapcanvas handler
   mapcanvas = document.getElementById('mapcanvas');
   mapcanvas.width = window.innerWidth - 300;
-  mapcanvas.height = window.innerHeight;
+  mapcanvas.height = window.innerHeight - 10;
   console.log('width: ' + mapcanvas.width + ' - ' + mapcanvas.height);
 
   // Get mapcanvas graphic context
@@ -34,25 +40,108 @@ function Main() {
   mapcanvas.onmousedown = OnMouseDown;
   mapcanvas.onmouseup = OnMouseUp;
 
+  window.addEventListener('keydown', keyPressed, false);
+  //mapcanvas.onkeypress = keyPressed;
+
+  iconsPanel = document.getElementById('iconsPanel');
+  iconsPanel.width = 280;
+  iconsPanel.height = window.innerHeight - 10;
+
+  window.x = 400;
+  window.y = 400;
+
+  window.loadCompleted = false;
+
+  openConnection();
+
   // call Draw() every 20 milliseconds
   window.loopId = setInterval(Draw, 100);
 }
 
+function keyPressed(e) {
+  if (e.keyCode === 39) {
+    window.x += 32;
+    window.mapCanvasValid = false;
+  } else if (e.keyCode === 40) {
+    window.y += 32;
+    window.mapCanvasValid = false;
+  } else if (e.keyCode === 37) {
+    window.x -= 32;
+    window.mapCanvasValid = false;
+  } else if (e.keyCode === 38) {
+    window.y -= 32;
+    window.mapCanvasValid = false;
+  }
+}
+
+function openConnection() {
+  var code = encodeURIComponent(btoa('![è#-C1pp@L1pp@0!#]ò'));
+  window.conn = new WebSocket('ws://double-triskel.rhcloud.com:8000', code);
+  window.conn.onopen = function() {
+    console.log('Websocket connetion opened.');
+  };
+  window.conn.onerror = function(error) {
+    console.log('websocket ERROR: ' + error);
+  };
+  window.conn.onmessage = socketMessage;
+}
+
+function socketMessage(message) {
+  var msg = JSON.parse(message.data);
+  if (msg.mt === 8) {
+    window.lands = msg.a;
+    var count = 0;
+    for (var i in window.lands) {
+      var land = window.lands[i];
+      if (land === null || land === undefined) {
+        continue;
+      }
+      $('#iconsPanel').append("<img id='icon" + land.id + "' src='icons/" + land.icon +
+        ".png' onclick='javascript:selectIcon(" + land.id + ");'/>");
+    }
+    window.loadCompleted = true;
+  }
+
+  if (msg.mt === 4) {
+    window.mapInfo = msg.i;
+    window.map = msg.m;
+    /*window.images = [];
+    for (var i in window.map) {
+      window.images[i] = new Image();
+      window.images[i].src = window.map[i].icon;
+    }*/
+    window.mapCanvasValid = false;
+  }
+}
+
+function selectIcon(id) {
+  if (window.selectedIcon) {
+    $('#icon' + window.selectedIcon).css('border', 'none');
+  }
+  window.selectedIcon = id;
+  $('#icon' + id).css({
+    'border-color': '#C1E0FF',
+    'border-width': '1px',
+    'border-style': 'solid'
+  });
+}
+
 function Draw() {
+  if (window.loadCompleted === false) {
+    console.log('images loading in progress');
+    return;
+  }
+
   if (mapCanvasValid == false) {
     window.ctx.clearRect(0, 0, window.mapcanvas.width, window.mapcanvas.height);
+    /*var midX = window.mapcanvas.width / 2;
+    var midY = window.mapcanvas.height / 2;*/
 
-    //DrawResults();
-
-    // Double 'for' cycle to cover branch lines with node shapes
-    /*for (index in window.data.nodes) {
-      DrawBranches(window.data.nodes[index]);
+    for (var i in window.map) {
+      //var item = window.map[i];
+      var image = document.getElementById('icon' + window.map[i].land_id);
+      ctx.drawImage(image, window.map[i].x - window.x, window.map[i].y - window.y);
     }
-    for (index in window.data.nodes) {
-      DrawNode(window.data.nodes[index]);
-    }
-
-    DrawSelection();*/
 
     mapCanvasValid = true;
   }
@@ -189,15 +278,49 @@ function DrawLabels(node, subNode) {
 function OnMouseDown(e) {
   // TODO - check that 1 is left button for every browser
   if (e.which == 1) {
-    var clickPoint = GetCursorPosition(e);
+    //var click = GetCursorPosition(e);
+    if (window.selectedIcon) {
+      //console.log(e.clientX + ' - ' + e.clientY);
+      var mapGridFlag = document.getElementById('mapGrid');
+      var gridX = e.clientX;
+      var gridY = e.clientY;
+      if (mapGridFlag.checked) {
+        gridX = Math.round(e.clientX / 32) * 32;
+        gridY = Math.round(e.clientY / 32) * 32;
+      }
 
-    SelectNode(clickPoint);
+      var newId = window.map.length;
+      window.map[newId] = {id: newId, x: gridX + window.x, y: gridY + window.y, land_id: window.selectedIcon};
+      window.mapCanvasValid = false;
+    }
+
+    /*SelectNode(clickPoint);
 
     if (window.selectedNode) {
       dragging = true;
       mapcanvas.onmousemove = OnMouseMove;
-    }
+    }*/
   }
+}
+
+function GetCursorPosition(e) {
+  var x;
+  var y;
+
+  if (e.pageX != undefined && e.pageY != undefined) {
+    x = e.pageX;
+    y = e.pageY;
+  } else {
+    x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+    y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
+  }
+
+  x -= window.mapcanvas.offsetLeft;
+  y -= window.mapcanvas.offsetTop;
+
+  //var cell = new Cell( Math.floor( y/kPieceHeight ), Math.floor( x/kPieceWidth ) );
+
+  return {x: x, y: y};
 }
 
 function SelectNode(clickPoint) {

@@ -1,6 +1,7 @@
 body {
 	background: #000;
 	font:11px Tahoma, sans-serif;
+	/*overflow: hidden;*/
 }
 
 .dialogBody {
@@ -14,16 +15,41 @@ body {
 
 .smallFont {
 	font: 11px Tahoma, sans-serif;
+	color: white;
 }
 
 #mapcanvas {
-	position: absolute;
+	position: fixed;
 	top: 0;
 	left: 0;
 	/*height: 100%;
 	width: 100%;*/
 	border: 1px dotted;
 	border-color: white;
+}
+
+#toolsPanel {
+	position: fixed;
+	top: 0;
+	right: 0;
+	max-width: 280;
+	height: 200;
+	/*width: 100%;*/
+	border: 1px dashed;
+	border-color: white;
+}
+
+#iconsPanel {
+	position: absolute;
+	top: 200;
+	right: 0;
+	max-width: 280;
+	/*height: 100%;
+	width: 100%;*/
+	border: 1px dashed;
+	border-color: white;
+	overflow-x: hidden;
+	overflow-y: visible;
 }
 
 #log {

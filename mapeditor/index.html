@@ -21,7 +21,10 @@
 	</canvas>
 
   <div id="toolsPanel" class="smallFont">
-		<input type="checkbox" id="mapGrid">Map grid<br>
+		<input type="checkbox" id="mapGrid" checked>Map grid<br>
+    <input type="text" id="borderLimit" size=8>
+    <input type="button" value="fill borders" onClick="javascript:fillBorders();"><br>
+    <input type="button" value="delete selected" onClick="javascript:deleteSelected();"><br>
 	</div>
 
   <div id="iconsPanel">

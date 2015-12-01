@@ -58,6 +58,34 @@ function Main() {
   window.loopId = setInterval(Draw, 100);
 }
 
+function fillBorders() {
+  //var mapGridFlag = document.getElementById('mapGrid');
+  if (window.selectedIcon) {
+    var limit = document.getElementById('borderLimit').value;
+    if (isNaN(limit) === true) {
+      console.log('Border limit not valid: ' + limit + ' - ' + typeof limit);
+      return;
+    }
+
+    var limitEnd = Math.round(limit / 32) * 32;
+    for (var x = 0; x < limit; x += 32) {
+      var newId = window.map.length;
+      window.map[newId] = {id: newId, x: x, y: 0, land_id: window.selectedIcon};
+      newId = window.map.length;
+      window.map[newId] = {id: newId, x: x, y: limitEnd, land_id: window.selectedIcon};
+    }
+
+    for (var y = 0; y < limit; y += 32) {
+      var newId = window.map.length;
+      window.map[newId] = {id: newId, x: 0, y: y, land_id: window.selectedIcon};
+      newId = window.map.length;
+      window.map[newId] = {id: newId, x: limitEnd, y: y, land_id: window.selectedIcon};
+    }
+
+    window.mapCanvasValid = false;
+  }
+}
+
 function keyPressed(e) {
   if (e.keyCode === 39) {
     window.x += 32;
@@ -105,16 +133,76 @@ function socketMessage(message) {
   if (msg.mt === 4) {
     window.mapInfo = msg.i;
     window.map = msg.m;
-    /*window.images = [];
+    window.mapXY = {};
     for (var i in window.map) {
-      window.images[i] = new Image();
-      window.images[i].src = window.map[i].icon;
-    }*/
+      if (window.mapXY[window.map[i].x] === undefined) {
+        window.mapXY[window.map[i].x] = {};
+      }
+      window.mapXY[window.map[i].x][window.map[i].y] = i;
+    }
+    console.log(window.mapXY);
     window.mapCanvasValid = false;
   }
 }
 
+function OnMouseDown(e) {
+  // TODO - check that 1 is left button for every browser
+  if (e.which == 1) {
+    var griddedX = Math.round((e.clientX + window.x - 16) / 32) * 32;
+    var griddedY = Math.round((e.clientY + window.y - 16) / 32) * 32;
+    if (window.mapXY[griddedX] !== undefined && window.mapXY[griddedX][griddedY] !== undefined) {
+      window.canvasSelectedIcon = window.mapXY[griddedX][griddedY];
+      window.mapCanvasValid = false;
+      //console.log('select gridded: ' + window.mapXY[griddedX][griddedY]);
+      return;
+    }
+
+    for (var x = e.clientX - 30 + window.x; x < e.clientX + window.x; x++) {
+      for (var y = e.clientY - 30 + window.y; y < e.clientY + window.y; y++) {
+        if (window.mapXY[x] !== undefined && window.mapXY[x][y] !== undefined) {
+          window.canvasSelectedIcon = window.mapXY[x][y];
+          //console.log('cavas icon: ' + window.canvasSelectedIcon + ' - x: ' + x + ' - ' + y);
+          window.mapCanvasValid = false;
+          return;
+        }
+      }
+    }
+
+    if (window.canvasSelectedIcon !== undefined) {
+      window.canvasSelectedIcon = undefined;
+      window.mapCanvasValid = false;
+    }
+
+    if (window.selectedIcon) {
+      var mapGridFlag = document.getElementById('mapGrid');
+      var gridX = e.clientX + window.x;
+      var gridY = e.clientY + window.y;
+      if (mapGridFlag.checked) {
+        gridX = Math.round(gridX / 32) * 32;
+        gridY = Math.round(gridY / 32) * 32;
+      }
+      //console.log('insertx: ' + gridX + ' - ' + gridY);
+
+      var newId = window.map.length;
+      window.map[newId] = {id: newId, x: gridX, y: gridY, land_id: window.selectedIcon};
+
+      if (window.mapXY[gridX] === undefined) {
+        window.mapXY[gridX] = {};
+      }
+      window.mapXY[gridX][gridY] = newId;
+
+      window.mapCanvasValid = false;
+    }
+  }
+}
+
 function selectIcon(id) {
+  if (window.selectedIcon === id) {
+    $('#icon' + window.selectedIcon).css('border', 'none');
+    window.selectedIcon = undefined;
+    return;
+  }
+
   if (window.selectedIcon) {
     $('#icon' + window.selectedIcon).css('border', 'none');
   }
@@ -134,200 +222,30 @@ function Draw() {
 
   if (mapCanvasValid == false) {
     window.ctx.clearRect(0, 0, window.mapcanvas.width, window.mapcanvas.height);
-    /*var midX = window.mapcanvas.width / 2;
-    var midY = window.mapcanvas.height / 2;*/
 
     for (var i in window.map) {
-      //var item = window.map[i];
       var image = document.getElementById('icon' + window.map[i].land_id);
       ctx.drawImage(image, window.map[i].x - window.x, window.map[i].y - window.y);
+
+      if (window.canvasSelectedIcon == i) {
+        ctx.beginPath();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'red';
+        ctx.rect(window.map[i].x - window.x, window.map[i].y - window.y, 32, 32);
+        ctx.stroke();
+      }
     }
 
     mapCanvasValid = true;
   }
 }
 
-function DrawResults() {
-  for (index in window.data.nodes) {
-    var node = window.data.nodes[index];
-
-    var value = 0;
-    if (window.calculus.nodesValues[node.id]) {
-      value = RoundDecimals(window.calculus.nodesValues[node.id]);
-    }
-
-    window.ctx.font = 'bold 13px sans-serif';
-    //window.ctx.fillStyle = '80A0A0';
-    window.ctx.fillStyle = 'C4E8FF';
-
-    var textDim = window.ctx.measureText(value);
-
-    var posX = node.point.x - textDim.width / 2;
-    var posY = node.point.y + window.shapesSize * 2;
-    if (node instanceof Result) {
-      posX = node.point.x + window.shapesSize * 2 - 4;
-      posY = node.point.y + 4;
-    }
-
-    window.ctx.fillText(value, posX, posY);
-
-    // Risk value
-    if ((node instanceof Event || node.fatherNode instanceof Event) && localStorage.Mode == 'risk') {
-      var thirdValue = false;
-      var rVal = '0';
-      if (window.calculus.riskValues[node.id]) {
-        rVal = RoundDecimals(window.calculus.riskValues[node.id]);
-      }
-      if (node.fatherNode instanceof Event) {
-        var branch = window.data.branches[node.fatherNode.id][node.id];
-        //-- in questo caso aggiungere il terzo valore preso dal ramo, oltre al valore del nodo
-        /*if (node instanceof Event) {
-          thirdValue = true;
-          rThirdVal = RoundDecimals(window.calculus.riskValues[branch.id]);
-        } else {*/
-        rVal = RoundDecimals(window.calculus.riskValues[branch.id]);
-        //}
-      }
-      var rDim = window.ctx.measureText(rVal);
-
-      if (node instanceof Result) {
-        window.ctx.fillText(rVal, node.point.x + window.shapesSize * 2 - 4, posY + 12);
-      } else {
-        window.ctx.fillText(rVal, node.point.x - rDim.width / 2, posY + 12);
-      }
-
-      /*if (thirdValue) {
-        var rDim = window.ctx.measureText(rThirdVal);
-        if (node instanceof Result) {
-          window.ctx.fillText(rThirdVal, node.point.x + window.shapesSize * 2 - 4, posY + 24);
-        } else {
-          window.ctx.fillText(rThirdVal, node.point.x - rDim.width / 2, posY + 24);
-        }
-      }*/
-    }
-  }
-}
-
-function DrawNode(node) {
-  if (node instanceof Decision) {
-    // Decision
-    window.ctx.fillStyle = 'rgb(187,158,255)';
-    window.ctx.fillRect(node.point.x - window.shapesSize, node.point.y - window.shapesSize, window.shapesSize * 2,
-      window.shapesSize * 2);
-  } else if (node instanceof Event) {
-    // Event
-    window.ctx.fillStyle = 'rgb(251,178,203)';
-    window.ctx.beginPath();
-    window.ctx.arc(node.point.x, node.point.y, window.shapesSize, 0, Math.PI * 2, true);
-    window.ctx.closePath();
-    window.ctx.fill();
-  } else {
-    // Result
-    window.ctx.fillStyle = 'rgb(182,213,151)';
-    window.ctx.beginPath();
-    window.ctx.moveTo(node.point.x - window.shapesSize - window.shapesSize / 3, node.point.y - window.shapesSize);
-    window.ctx.lineTo(node.point.x + window.shapesSize + window.shapesSize / 3, node.point.y);
-    window.ctx.lineTo(node.point.x - window.shapesSize - window.shapesSize / 3, node.point.y + window.shapesSize);
-    window.ctx.closePath();
-    window.ctx.fill();
-  }
-}
-
-function DrawBranches(node) {
-  if (node instanceof Result) {
-    return;
-  }
-
-  var subNodes = node.GetSubNodes();
-  for (index in subNodes) {
-    var subNode = subNodes[index];
-
-    var branchColor = branchesColor;
-    var branchWidth = branchesWidth;
-    if (node.id in window.data.branches && subNode.id in window.data.branches[node.id]) {
-      var branch = window.data.branches[node.id][subNode.id];
-      if (branch.bestBranch) {
-        branchWidth = bestBranchesWidth;
-        branchColor = bestBranchesColor;
-      }
-    }
-
-    window.ctx.lineWidth = branchWidth;
-    window.ctx.strokeStyle = branchColor;
-    window.ctx.beginPath();
-    window.ctx.moveTo(node.point.x, node.point.y);
-    window.ctx.lineTo(subNode.point.x /*- window.shapesSize*/, subNode.point.y);
-    window.ctx.closePath();
-    window.ctx.stroke();
-
-    DrawLabels(node, subNode);
-  }
-}
-
-function DrawLabels(node, subNode) {
-  if (node.id in window.data.branches && subNode.id in window.data.branches[node.id]) {
-    var middlePoint = CalcLineMiddlePoint(node.point, subNode.point);
-    var lineAngle = CalcLineAngle(node.point, subNode.point);
-
-    var branch = window.data.branches[node.id][subNode.id];
-    branch.SetAllPositions(node, middlePoint, lineAngle);
-    branch.SetAllAngles(node, lineAngle);
-  }
-}
-
-function OnMouseDown(e) {
-  // TODO - check that 1 is left button for every browser
-  if (e.which == 1) {
-    //var click = GetCursorPosition(e);
-    if (window.selectedIcon) {
-      //console.log(e.clientX + ' - ' + e.clientY);
-      var mapGridFlag = document.getElementById('mapGrid');
-      var gridX = e.clientX;
-      var gridY = e.clientY;
-      if (mapGridFlag.checked) {
-        gridX = Math.round(e.clientX / 32) * 32;
-        gridY = Math.round(e.clientY / 32) * 32;
-      }
-
-      var newId = window.map.length;
-      window.map[newId] = {id: newId, x: gridX + window.x, y: gridY + window.y, land_id: window.selectedIcon};
-      window.mapCanvasValid = false;
-    }
-
-    /*SelectNode(clickPoint);
-
-    if (window.selectedNode) {
-      dragging = true;
-      mapcanvas.onmousemove = OnMouseMove;
-    }*/
-  }
-}
-
-function GetCursorPosition(e) {
-  var x;
-  var y;
-
-  if (e.pageX != undefined && e.pageY != undefined) {
-    x = e.pageX;
-    y = e.pageY;
-  } else {
-    x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
-    y = e.clientY + document.body.scrollTop + document.documentElement.scrollTop;
-  }
-
-  x -= window.mapcanvas.offsetLeft;
-  y -= window.mapcanvas.offsetTop;
-
-  //var cell = new Cell( Math.floor( y/kPieceHeight ), Math.floor( x/kPieceWidth ) );
-
-  return {x: x, y: y};
-}
-
-function SelectNode(clickPoint) {
-  var previousSelectedNode = window.selectedNode;
-  window.selectedNode = GetNodeAt(clickPoint);
-  if (previousSelectedNode != window.selectedNode) {
-    InvalidateCanvas();
+function deleteSelected() {
+  if (window.canvasSelectedIcon) {
+    var item = window.map[window.canvasSelectedIcon];
+    delete window.mapXY[item.x][item.y];
+    delete window.map[window.canvasSelectedIcon];
+    window.mapCanvasValid = false;
   }
 }
 
@@ -343,34 +261,4 @@ function OnMouseMove(e) {
 function OnMouseUp() {
   dragging = false;
   mapcanvas.onmousemove = null;
-}
-
-function DrawSelection() {
-  if (window.selectedNode) {
-    window.ctx.strokeStyle = selectionColor;
-    window.ctx.lineWidth = 2;
-    if (window.selectedNode instanceof Decision) {
-      // Decision
-      window.ctx.strokeRect(window.selectedNode.point.x - window.shapesSize - 1, window.selectedNode.point.y -
-        window.shapesSize - 1, window.shapesSize * 2 + 1, window.shapesSize * 2 + 1);
-    } else if (window.selectedNode instanceof Event) {
-      // Event
-      window.ctx.beginPath();
-      window.ctx.arc(window.selectedNode.point.x, window.selectedNode.point.y, window.shapesSize + 1, 0, Math.PI * 2,
-        true);
-      window.ctx.closePath();
-      window.ctx.stroke();
-    } else {
-      // Result
-      window.ctx.beginPath();
-      window.ctx.moveTo(window.selectedNode.point.x - window.shapesSize - window.shapesSize / 3 - 1,
-        window.selectedNode.point.y - window.shapesSize - 1);
-      window.ctx.lineTo(window.selectedNode.point.x + window.shapesSize + window.shapesSize / 3 + 1,
-        window.selectedNode.point.y);
-      window.ctx.lineTo(window.selectedNode.point.x - window.shapesSize - window.shapesSize / 3 - 1,
-        window.selectedNode.point.y + window.shapesSize + 1);
-      window.ctx.closePath();
-      window.ctx.stroke();
-    }
-  }
 }

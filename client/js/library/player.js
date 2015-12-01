@@ -208,23 +208,3 @@
   Game.Player = Player;
 
 })();
-
-//Controllo delle collisioni con gli oggetti circostanti
-function CheckCollision(x, y, width , height) {
-  for(var i = 0 ; i < GAME.ITEMS.length ; i++) {
-
-    var item = GAME.INFO.ITEMS[GAME.ITEMS[i].land_id];
-    var pathImage = CanvasEngine.buildPathImage(PATH.ITEMS , GAME.ITEMS[i].land_id);
-		if(item.obstacle && images[pathImage]) {
-
-      if (x < items[i].x + images[pathImage].width &&
-				x + width > items[i].x &&
-				y < items[i].y + images[pathImage].height &&
-				y + height > items[i].y) {
-				return false;
-			}
-
-		}
-	}
-	return true;
-}

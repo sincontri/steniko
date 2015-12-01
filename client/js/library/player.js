@@ -1,6 +1,6 @@
 // Classe per gestione giocatori
 (function(){
-  function Player(x, y, hp, name, race, gender , variant , speed , max_speed , vision , player_id , unit_id) {
+  function Player(x, y, hp, max_hp, energy, max_energy, name, race, gender , variant , speed , max_speed , vision , player_id , unit_id) {
 
     CanvasEngine._checkValue(x , 'int');
     CanvasEngine._checkValue(y , 'int');
@@ -20,13 +20,20 @@
     this.player_id = player_id;
     this.unit_id = unit_id;
 
+    this.path =  PATH.PLAYERS;
+
     // ATTENTION:
     // It represents the player position on the world(room), not the canvas position
     this.x = x;
     this.y = y;
 
     //Status
-    this.hp = hp;
+    this.hp = max_hp;
+    this.current_hp = hp;
+    this.energy = max_energy;
+    this.current_energy = energy;
+
+    //Description
     this.name = name;
     this.race = race;
     this.gender = gender;
@@ -37,23 +44,10 @@
     this.max_speed = max_speed;
     this.vision = vision;
 
-
-    //Caricamento Immagine
+    //Caricamento immagine
     this.img = new Image();
     this.img.onload = function () {};
-    this.path =  "icons/player/base/";
-
-    this.img.src = this.path + WS_Race[this.race].toLowerCase();
-
-    if(WS_Variant[this.variant] !== 'NEUTER') {
-      this.img.src += '_' + WS_Variant[this.variant].toLowerCase();
-    }
-
-    if(WS_Gender[this.gender] !== 'NEUTER') {
-      this.img.src += '_' + WS_Gender[this.gender].toLowerCase().charAt(0);
-    }
-
-    this.img.src += '.png';
+    this.img.src = buildImage(this.race , this.variant , this.gender);
 
     // Grandezza Immagine
     this.width = 32;
@@ -194,7 +188,7 @@
     				this.x + this.width > GAME.ITEMS[i].x &&
     				this.y < GAME.ITEMS[i].y + GAME.LOADED_IMAGES[pathImage].height &&
     				this.y + this.height > GAME.ITEMS[i].y) {
-    				return false;
+    				return !COLLISION_FLAG;
     			}
 
     		}
@@ -204,7 +198,49 @@
   	return true;
   }
 
+  Player.prototype.checkElementPosition = function(x, y) {
+    var keys = Object.keys(GAME.ITEMS);
+    for(var j = 0 ; j < keys.length ; j++) {
+      var i = keys[j];
+
+      if(GAME.ITEMS[i].object_id) {
+        var item = GAME.INFO.OBJECTS[GAME.ITEMS[i].object_id];
+        //console.log(item , GAME.ITEMS[i].x , GAME.ITEMS[i].y);
+        var pathImage = CanvasEngine.buildPathImage(PATH.OBJECTS , GAME.ITEMS[i].object_id);
+    		if(GAME.LOADED_IMAGES[pathImage]) {
+          if (x < GAME.ITEMS[i].x + GAME.LOADED_IMAGES[pathImage].width &&
+    				x > GAME.ITEMS[i].x &&
+    				y < GAME.ITEMS[i].y + GAME.LOADED_IMAGES[pathImage].height &&
+    				y > GAME.ITEMS[i].y) {
+    				//return GAME.INFO.OBJECTS[GAME.ITEMS[i].object_id];
+            console.log(item);
+            Interface.selectionUnit(item);
+    			}
+        }
+      }
+    }
+  }
+
   // add "class" Player to our Game object
   Game.Player = Player;
 
 })();
+
+
+//Costruisce l'src per le immagini dei giocatori
+buildImage = function(race , variant , gender) {
+
+  var src = PATH.PLAYERS + WS_Race[race].toLowerCase();
+
+  if(WS_Variant[variant] !== 'NEUTER') {
+    src += '_' + WS_Variant[variant].toLowerCase();
+  }
+
+  if(WS_Gender[gender] !== 'NEUTER') {
+    src += '_' + WS_Gender[gender].toLowerCase().charAt(0);
+  }
+
+  src += '.png';
+
+  return src;
+}

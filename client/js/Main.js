@@ -9,14 +9,21 @@ var player = null;
 
 //Testing
 var GAME = {
+  //Contiene i giocatori circostanti
   'OTHER_PLAYERS' : {},
+  //Contiene le immagini del gioco caricate
   'LOADED_IMAGES' : {},
+  //Contiene le informazioni della mappa in cui si sta giocando
   'MAP_INFO': {},
+  //Contiene la lista degli oggetti presenti sulla mappa
   'ITEMS' : {},
+  //Contiene l'anagrafica degli oggetti del gioco
   'INFO' : {
     'LANDS' : {},
     'OBJECTS': {}
-  }
+  },
+  //Contiene la lista delle unita create dall'utente
+  'LIST_UNIT': []
 };
 
 //====================================================================
@@ -28,7 +35,7 @@ function signInCallback(authResult) {
 
   // Nasconde il pulsante e rende visibile la finestra di gioco
   document.getElementById('signinButton').style.display = 'none';
-  document.getElementById('interface').style.display = 'none';
+  document.getElementById('interface').style.display = 'block';
   document.getElementById('canvas').style.display = 'table';
 
   connection = new WebSocket(WEBSOCKET, encodeURIComponent(authResult['code']));
@@ -98,9 +105,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
       Drawer.Terrain();
       Drawer.Items();
-      //Drawer.Objects();
+      Drawer.Objects();
+
       Drawer.Players();
       player.draw();
+
       Drawer.Vision();
       Drawer.Hud();
 

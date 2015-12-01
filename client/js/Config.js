@@ -18,12 +18,23 @@ var MOVE_INTERVAL = 50; //ogni quanti ms mando il messaggio della mia posizione
 //PATH PARAM
 var PATH = {
   'ITEMS' : "icons/dc-dngn/",
-  'OBJECTS' : "icons/item"
+  'OBJECTS' : "icons/item/",
+  'PLAYERS' : "icons/player/base/"
 };
+
+/* CONFIGURATION MENU */
+var CHOOSE_UNIT = null;
+
+/* GAME FLAG */
+var COLLISION_FLAG = false;
 
 //=========================================================
 //====================== OBJECT WSS =======================
 //=========================================================
+
+var Object_Types = {
+  1: 'ARMOUR'
+}
 
 var Race = {
   CENTAUR: 1,
@@ -153,10 +164,12 @@ var ServerMessageTypes = {
   LOGOUT: 7,
   LANDS: 8,
   OBJECTS: 9,
-  UNIT_COLLISION: 10
+  UNIT_COLLISION: 10,
+  LIST_UNIT: 11
 };
 
 var ClientMessageTypes = {
   CLOSE: 1,
-  MOVE: 2
+  MOVE: 2,
+  CHOOSE_UNIT: 3
 }

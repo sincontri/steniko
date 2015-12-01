@@ -59,6 +59,7 @@ function clickReporter(e) {
     //MOVE PLAYER
     if(player) {
       player.goToPosition(e.x, e.y);
+			player.checkElementPosition(e.x, e.y);
     }
   }
 

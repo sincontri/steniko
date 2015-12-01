@@ -56,8 +56,14 @@ var CanvasEngine = {
    *
    * @return Image
    */
-  buildPathImage : function(path , land_id) {
-    return path + GAME.INFO.LANDS[ land_id ].icon + '.png';
+  buildPathImage : function(path , id , mode) {
+    if(!mode || mode === 'lands') {
+      return path + GAME.INFO.LANDS[ id ].icon + '.png';
+    }
+    if(mode === 'objects') {
+      return path + GAME.INFO.OBJECTS[ id ].icon + '.png';
+    }
+    return false;
   },
 
   /**
@@ -210,6 +216,9 @@ var CanvasEngine = {
     			data.x,
     			data.y,
     			data.h,
+          data.mh,
+          data.e,
+          data.me,
     			data.n,
     			data.r,
     			data.g,
@@ -229,11 +238,14 @@ var CanvasEngine = {
       case ServerMessageTypes.PLAYERS_INFO :
         Console.Log('Other Player' , 1 , 'wss');
     		if(data.i) { this._checkValue(data.i, 'int'); }
-
+        /* b: 400 e: 30 g: 2 h: 40 i: 120 me: 30 mh: 40 mt: 3 n: "Nik" pid: 2 r: 1 s: 80 uid: 2 v: 2 x: 312 y: 465 */
         GAME.OTHER_PLAYERS[data.uid] = new Game.Player(
     			data.x,
     			data.y,
     			data.h,
+          data.mh,
+          data.e,
+          data.me,
     			data.n,
     			data.r,
     			data.g,
@@ -293,9 +305,7 @@ var CanvasEngine = {
       case ServerMessageTypes.LANDS :
         Console.Log('Lands' , 1 , 'map');
 
-        /*
-        width - height - icon - id - obstacle
-        */
+        // width - height - icon - id - obstacle
         for(var i = 0 ; i < data.a.length ; i++) {
           var item = data.a[i];
           if(item) {
@@ -326,6 +336,16 @@ var CanvasEngine = {
 
         player.x = data.x;
         player.y = data.y;
+        break;
+
+//===========================================================
+//====================== LIST UNIT ==========================
+//===========================================================
+      case ServerMessageTypes.LIST_UNIT :
+        Console.Log('List Unit' , 1 , 'map');
+
+        GAME.LIST_UNIT = data.a;
+        Interface.chooseUnit(data.a);
         break;
 
     }

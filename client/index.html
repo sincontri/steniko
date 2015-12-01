@@ -4,84 +4,44 @@
 	<title>Test Client</title>
 
   <style type="text/css">
-      @import url(style.css);
+      @import url(css/style.css);
   </style>
 
   <!-- BEGIN Pre-requisites -->
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js">
-  </script>
-  <script src="https://apis.google.com/js/client:platform.js?onload=start" async defer>
-  </script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+  <script src="https://apis.google.com/js/client:platform.js?onload=start"></script>
   <!-- END Pre-requisites -->
 
-  <script>
-    function start() {
-      gapi.load('auth2', function() {
-        auth2 = gapi.auth2.init({
-          client_id: '312071925620-5naovu338onpjg024ngsn07hp702ajma.apps.googleusercontent.com'
-        });
-      });
-    }
-  </script>
+  <!-- Include files -->
+  <script type="text/javascript" src="js/Config.js"></script>
+  <script type="text/javascript" src="js/CanvasEngine.js"></script>
+  <script type="text/javascript" src="js/Log.js"></script>
+  <script type="text/javascript" src="js/Input.js"></script>
+  <script type="text/javascript" src="js/Interface.js"></script>
 
-  <script type="text/javascript" src="Main.js"></script>
+  <!-- Game Library -->
+  <script src="./js/library/init.js"></script>
+  <script src="./js/library/camera.js"></script>
+  <script src="./js/library/map.js"></script>
+  <script src="./js/library/player.js"></script>
 
-	<!--<script type="text/javascript" src="Languages.js"></script>
-	<script type="text/javascript" src="Point.js"></script>
-	<script type="text/javascript" src="Utils.js"></script>
-	<script type="text/javascript" src="Data.js"></script>
-	<script type="text/javascript" src="Branch.js"></script>
-	<script type="text/javascript" src="Calculus.js"></script>
-	<script type="text/javascript" src="LoadSave.js"></script>
-	<script type="text/javascript" src="Analysis.js"></script>
-	<script type="text/javascript" src="popupmenu.js"></script>-->
+  <script type="text/javascript" src="js/Main.js"></script>
 
   </head>
 
 <body>
-  <button id="signinButton">Sign in with Google</button>
-  <script>
-    $('#canvas').hide();
-    $('#signinButton').click(function() {
-      // signInCallback defined in step 6.
-      auth2.grantOfflineAccess({'redirect_uri': 'postmessage'}).then(signInCallback);
-    });
-  </script>
-  <div id="result"></div>
+  <img src="img/google.png" id="signinButton" class="absolute" alt="Sign in with Google" title="Sign in with Google">
 
-  <script>
-  function signInCallback(authResult) {
-    if (authResult['code']) {
-
-      // Hide the sign-in button now that the user is authorized, for example:
-      $('#signinButton').attr('style', 'display: none');
-      $('#canvas').show();
-
-      var connection = new WebSocket('ws://double-triskel.rhcloud.com:8000', encodeURIComponent(authResult['code']));
-      // When the connection is open, send some data to the server
-      connection.onopen = function () {
-        connection.send('Ping'); // Send the message 'Ping' to the server
-      };
-
-      // Log errors
-      connection.onerror = function (error) {
-        console.log('WebSocket Error: ' + error);
-      };
-
-      // Log messages from the server
-      connection.onmessage = function (e) {
-        console.log('Server: ' + e.data);
-      };
-    } else {
-      console.log('Google login send error!');
-    }
-  }
-  </script>
-
-  <canvas id="canvas">
-		This text is displayed if your browser does not support HTML5 Canvas.
-	</canvas>
-
-	<textarea id="log" rows="4" cols="40" readonly=true></textarea>
+  <div id="interface" class="totale">
+    <div id="chooseUnit">
+      <div class="relative totale">
+        <div class="titleBar"></div>
+      </div>
+    </div>
+  </div>
+  <canvas id="canvas" class="totale absolute">
+    Your browser does not support HTML5 Canvas.
+  </canvas>
+	<!--<textarea id="log" rows="4" cols="40" readonly=true></textarea>-->
 </body>
 </html>

@@ -58,14 +58,26 @@ function clickReporter(e) {
   if(e.button === 0) {
     //MOVE PLAYER
     if(player) {
-      player.goToPosition(e.x, e.y);
 			player.checkElementPosition(e.x, e.y);
+			player.checkPlayersPosition(e.x, e.y);
     }
   }
 
   if(e.button === 2) {
+		player.goToPosition(e.x, e.y);
     //SHOW CUSTOM CONTEXT MENU
   }
 
   return false;
+}
+
+//DISABLE CONTEXT MENU (RIGHT CLICK ON MOUSE)
+if (document.addEventListener) {
+  document.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+  }, false);
+} else {
+  document.attachEvent('oncontextmenu', function() {
+    window.event.returnValue = false;
+  });
 }

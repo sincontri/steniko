@@ -7,7 +7,7 @@ var canvas = null;
 var context = null;
 var player = null;
 
-//Testing
+//Game Object
 var GAME = {
   //Contiene i giocatori circostanti
   'OTHER_PLAYERS' : {},
@@ -23,8 +23,14 @@ var GAME = {
     'OBJECTS': {}
   },
   //Contiene la lista delle unita create dall'utente
-  'LIST_UNIT': []
+  'LIST_UNIT': [],
+  'INVENTORY': []
 };
+
+var WINDOWS = {};
+var MENU_BAR = [
+  { id:'INVENTORY', icon:'fa-archive', listener:'createInventory' }
+];
 
 //====================================================================
 //======================== CALLBACK GOOGLE ===========================
@@ -95,7 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		  Drawer.Check();
 		  player.update(STEP);
-
 		}
 
 		var draw = function() {

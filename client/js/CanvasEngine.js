@@ -287,6 +287,7 @@ var CanvasEngine = {
           }
         }
 
+        Interface.createBar('MENU_BAR');
         Game.play(); // PLAY THE GAME
         break;
 
@@ -345,7 +346,10 @@ var CanvasEngine = {
         Console.Log('List Unit' , 1 , 'map');
 
         GAME.LIST_UNIT = data.a;
-        Interface.chooseUnit(data.a);
+        if(Interface.checkWindow('chooseUnit')) {
+          WINDOWS['CHOOSE_UNIT'] = Interface.createWindow('chooseUnit' , 'CHOOSE_UNIT' , 400 , 300);
+        }
+        Interface.chooseUnit(data.a , WINDOWS['CHOOSE_UNIT'].body);
         break;
 
     }

@@ -26,7 +26,12 @@ var PATH = {
 var CHOOSE_UNIT = null;
 
 /* GAME FLAG */
-var COLLISION_FLAG = false;
+var COLLISION_FLAG = true; //Attiva la collisione
+var COLLISION_TOLLERANCE = 5;  //Gestisce quanti pixel tollerare alla collisione
+
+
+/* INVENTORY PARAM */
+var INVENTORY_SIZE = 30;
 
 //=========================================================
 //====================== OBJECT WSS =======================

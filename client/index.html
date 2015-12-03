@@ -6,13 +6,15 @@
   <style type="text/css">
       @import url(css/style.css);
       @import url(css/circle.css);
-      @import url(js/jquery/jquery-ui.css);
+      @import url(css/progress_bar.css);
+      @import url(css/font-awesome.css);
   </style>
 
   <!-- BEGIN Pre-requisites -->
   <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
-  <script src="./js/jquery/jquery-ui.js"></script>
   <script src="https://apis.google.com/js/client:platform.js?onload=start"></script>
+
+  <script type="text/javascript" src="./js/library/interact.js"></script>
   <!-- END Pre-requisites -->
 
   <!-- Include files -->
@@ -37,15 +39,6 @@
 
   <div id="interface" class="totale">
 
-    <!-- CHOOSE UNIT MENU -->
-    <div id="chooseUnit" class="draggable absolute window">
-      <div class="absolute handle txt_center"> CHOOSE UNIT </div>
-      <table class="relative" cellpadding="0" cellspacing="10">
-        <tr><td><div class="box totale"></div></td></tr>
-        <tr><td class="containerButton" align="center"><div class="buttonMenu" id="chooseUnit_button">Gioca</div></td></tr>
-      </table>
-    </div>
-
     <!-- PLAYER HUD -->
     <div id="player_HUD" class="absolute">
       <div class="relative">
@@ -68,14 +61,6 @@
 
       </div>
     </div>
-
-    <!-- SELECTION UNIT -->
-    <div id="selectionUnit" class="absolute window draggable">
-      <div id="selectionUnit_name" class="absolute handle txt_center"> STATUS </div>
-      <div class="closeWindow">X</div>
-      <table id="selectionUnit_stats" class="relative" cellpadding="0" cellspacing="10"></table>
-    </div>
-
 
   </div>
   <canvas id="canvas" class="totale absolute">

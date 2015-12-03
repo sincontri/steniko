@@ -8,42 +8,13 @@ var Drawer = {
       var keys = Object.keys(GAME.ITEMS);
       for(var j = 0 ; j < keys.length ; j++) {
         var i = keys[j];
-        //Calcolo coordinata
-        var item_x = ((canvas.width/2) - (player.width/2)) + (GAME.ITEMS[i].x - player.x);
-        var item_y = ((canvas.height/2) - (player.height/2)) + (GAME.ITEMS[i].y - player.y);
 
         //LAND
-        var pathImage = CanvasEngine.buildPathImage(PATH.ITEMS , GAME.ITEMS[i].land_id , 'lands');
-        if(!GAME.LOADED_IMAGES[pathImage]) {
-          var img = new Image();
-          img.onload = function () {};
-          img.src = pathImage;
-          GAME.LOADED_IMAGES[pathImage] = img;
-        }
-        context.drawImage(GAME.LOADED_IMAGES[pathImage] , item_x, item_y);
-
-      }
-
-    }
-
-  },
-
-  //Disegno equipaggiamenti presenti in mappa
-  Objects : function() {
-
-    if(Object.keys(GAME.ITEMS).length > 0) {
-
-      var keys = Object.keys(GAME.ITEMS);
-      for(var j = 0 ; j < keys.length ; j++) {
-        var i = keys[j];
-
-        //OBJECT
-        if(GAME.ITEMS[i].object_id) {
+        if(GAME.ITEMS[i].land_id) {
           //Calcolo coordinata
           var item_x = ((canvas.width/2) - (player.width/2)) + (GAME.ITEMS[i].x - player.x);
           var item_y = ((canvas.height/2) - (player.height/2)) + (GAME.ITEMS[i].y - player.y);
-          var pathImage = CanvasEngine.buildPathImage(PATH.OBJECTS , GAME.ITEMS[i].object_id , 'objects');
-
+          var pathImage = CanvasEngine.buildPathImage(PATH.ITEMS , GAME.ITEMS[i].land_id , 'lands');
           if(!GAME.LOADED_IMAGES[pathImage]) {
             var img = new Image();
             img.onload = function () {};
@@ -57,6 +28,41 @@ var Drawer = {
 
     }
 
+  },
+
+  //Disegno equipaggiamenti presenti in mappa
+  Objects : function() {
+    if(Object.keys(GAME.ITEMS).length > 0) {
+
+      var keys = Object.keys(GAME.ITEMS);
+      for(var j = 0 ; j < keys.length ; j++) {
+        var i = keys[j];
+
+        //OBJECT
+        if(GAME.ITEMS[i].object_id) {
+          //Calcolo coordinata
+          var item_x = ((canvas.width/2) - (player.width/2)) + (GAME.ITEMS[i].x - player.x);
+          var item_y = ((canvas.height/2) - (player.height/2)) + (GAME.ITEMS[i].y - player.y);
+
+          var arr_items = JSON.parse(GAME.ITEMS[i].object_id);
+
+          for(var x = 0 ; x < arr_items.length ; x++) {
+
+            var pathImage = CanvasEngine.buildPathImage(PATH.OBJECTS , arr_items[x] , 'objects');
+
+            if(!GAME.LOADED_IMAGES[pathImage]) {
+              var img = new Image();
+              img.onload = function () {};
+              img.src = pathImage;
+              GAME.LOADED_IMAGES[pathImage] = img;
+            }
+            context.drawImage(GAME.LOADED_IMAGES[pathImage] , item_x, item_y);
+
+          }
+
+        }
+      }
+    }
   },
 
   //Disegno giocatori

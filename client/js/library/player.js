@@ -184,10 +184,10 @@
         var pathImage = CanvasEngine.buildPathImage(PATH.ITEMS , GAME.ITEMS[i].land_id);
     		if(item.obstacle && GAME.LOADED_IMAGES[pathImage]) {
 
-          if (this.x < GAME.ITEMS[i].x + GAME.LOADED_IMAGES[pathImage].width &&
-    				this.x + this.width > GAME.ITEMS[i].x &&
-    				this.y < GAME.ITEMS[i].y + GAME.LOADED_IMAGES[pathImage].height &&
-    				this.y + this.height > GAME.ITEMS[i].y) {
+          if (this.x < GAME.ITEMS[i].x + (GAME.LOADED_IMAGES[pathImage].width - COLLISION_TOLLERANCE) &&
+    				this.x + (this.width - COLLISION_TOLLERANCE) > GAME.ITEMS[i].x &&
+    				this.y < GAME.ITEMS[i].y + (GAME.LOADED_IMAGES[pathImage].height - COLLISION_TOLLERANCE) &&
+    				this.y + (this.height - COLLISION_TOLLERANCE) > GAME.ITEMS[i].y) {
     				return !COLLISION_FLAG;
     			}
 
@@ -199,25 +199,56 @@
   }
 
   Player.prototype.checkElementPosition = function(x, y) {
+    x = this.x + (x - (canvas.width/2));
+    y = this.y + (y - (canvas.height/2));
     var keys = Object.keys(GAME.ITEMS);
     for(var j = 0 ; j < keys.length ; j++) {
       var i = keys[j];
 
       if(GAME.ITEMS[i].object_id) {
-        var item = GAME.INFO.OBJECTS[GAME.ITEMS[i].object_id];
-        //console.log(item , GAME.ITEMS[i].x , GAME.ITEMS[i].y);
-        var pathImage = CanvasEngine.buildPathImage(PATH.OBJECTS , GAME.ITEMS[i].object_id);
-    		if(GAME.LOADED_IMAGES[pathImage]) {
-          if (x < GAME.ITEMS[i].x + GAME.LOADED_IMAGES[pathImage].width &&
-    				x > GAME.ITEMS[i].x &&
-    				y < GAME.ITEMS[i].y + GAME.LOADED_IMAGES[pathImage].height &&
-    				y > GAME.ITEMS[i].y) {
-    				//return GAME.INFO.OBJECTS[GAME.ITEMS[i].object_id];
-            console.log(item);
-            Interface.selectionUnit(item);
-    			}
+        var item = JSON.parse(GAME.ITEMS[i].object_id);
+        for(var z = 0 ; z < item.length ; z++) {
+          var info = GAME.INFO.OBJECTS[item[z]];
+
+          var pathImage = CanvasEngine.buildPathImage(PATH.OBJECTS , item[z] , 'objects');
+      		if(GAME.LOADED_IMAGES[pathImage]) {
+            if (x < GAME.ITEMS[i].x + GAME.LOADED_IMAGES[pathImage].width &&
+      				x > GAME.ITEMS[i].x &&
+      				y < GAME.ITEMS[i].y + GAME.LOADED_IMAGES[pathImage].height &&
+      				y > GAME.ITEMS[i].y) {
+
+              if(!WINDOWS['SELECTION_OBJECT']) {
+                WINDOWS['SELECTION_OBJECT'] = Interface.createWindow('selectionUnit' , 'STATUS' , 250 , 200);
+              }
+              Interface.selectionObject(info , WINDOWS['SELECTION_OBJECT'].id);
+              return true;
+
+      			}
+          }
+
         }
       }
+    }
+  }
+
+  Player.prototype.checkPlayersPosition = function(x, y) {
+    x = this.x + (x - (canvas.width/2));
+    y = this.y + (y - (canvas.height/2));
+
+    var keys = Object.keys(GAME.OTHER_PLAYERS);
+    for(var j = 0 ; j < keys.length ; j++) {
+      var player = GAME.OTHER_PLAYERS[keys[j]];
+
+      if (x < player.x + (player.img.width/2) &&
+				x > player.x - (player.img.width/2) &&
+				y < player.y + (player.img.height/2) &&
+				y > player.y - (player.img.height/2)) {
+
+        WINDOWS['SELECTION_OBJECT'] = Interface.createWindow('selectionUnit' , 'STATUS' , 250 , 200);
+        Interface.selectionPlayer(player , WINDOWS['SELECTION_OBJECT'].id);
+        return true;
+
+			}
     }
   }
 

@@ -33,6 +33,32 @@ var COLLISION_TOLLERANCE = 5;  //Gestisce quanti pixel tollerare alla collisione
 /* INVENTORY PARAM */
 var INVENTORY_SIZE = 30;
 
+/* CONTEXT MENU AND SELECTION */
+//Lista voci menu da mostrare in caso di click su determinati oggetti
+var CONTEXT_MENU = {
+  'OBJECT' : [
+    {name:'Prendi', callback:'getDroppableItem'}
+  ],
+  'PLAYER' : [
+    {name:'Parla', callback:'talkWithPlayer'},
+    {name:'Segui', callback:'followPlayer'},
+    {name:'Esamina', callback:'examinePlayer'}
+  ]
+};
+
+//Oggetto selezionato dal mouse
+var SELECTION_MOUSE = false;
+var SELECTOR = {
+  MOVE: '#00f',
+  ITEM: '#fff',
+  PLAYER: '#ff0',
+  ATTACK: '#f00',
+  TERRAIN: '#0ff'
+};
+
+//Camera Mode
+var CAMERA_MODE = 2;
+
 //=========================================================
 //====================== OBJECT WSS =======================
 //=========================================================
@@ -170,11 +196,22 @@ var ServerMessageTypes = {
   LANDS: 8,
   OBJECTS: 9,
   UNIT_COLLISION: 10,
-  LIST_UNIT: 11
+  LIST_UNIT: 11,
+  GET_DROP_ITEM: 12,
+  UPDATE_DROP_ITEMS: 13,
+  PLAYER_INVENTORY: 14,
+  LOCK_OK: 15,
+  LOCK_FAIL: 16
 };
 
 var ClientMessageTypes = {
   CLOSE: 1,
   MOVE: 2,
-  CHOOSE_UNIT: 3
+  CHOOSE_UNIT: 3,
+  GET_DROP_ITEM: 4,
+  LOCK_DROP_ITEM: 5
+}
+
+var StatusPlayer = {
+  DROP: 1
 }

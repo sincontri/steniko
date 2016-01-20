@@ -42,28 +42,21 @@ var CanvasEngine = {
    *
    * @return Image
    */
-  createImage : function(path) {
+  createImage : function(path , room) {
     this._checkValue(path , 'string');
     var img = new Image();
+
+    if(room) {
+      img.onload = function() {
+        GAME.ROOM.map.generate();
+        Console.Log('TERRAIN LOADED', 'map');
+        Interface.removeBroadcast();
+        Game.play();
+      }
+    }
+
     img.src = path + '.png';
     return img;
-  },
-
-  /**
-   * Crea il path per trovare l'immagine
-   * @method createImage
-   * @param {string} path
-   *
-   * @return Image
-   */
-  buildPathImage : function(path , id , mode) {
-    if(!mode || mode === 'lands') {
-      return path + GAME.INFO.LANDS[ id ].icon + '.png';
-    }
-    if(mode === 'objects') {
-      return path + GAME.INFO.OBJECTS[ id ].icon + '.png';
-    }
-    return false;
   },
 
   /**
@@ -193,6 +186,7 @@ var CanvasEngine = {
 //===========================================================
 //===================== CONNECT OPEN ========================
 //===========================================================
+//Il messaggio si occupa nel segnalare l'apertura del webSocket
       case ServerMessageTypes.CONFIRM_CONNECTION :
         Console.Log('Confirm Connection' , 1 , 'wss');
         break;
@@ -200,6 +194,7 @@ var CanvasEngine = {
 //===========================================================
 //===================== CONNECT CLOSE =======================
 //===========================================================
+//Il messaggio si occupa nel gestire la chiusura del webSocket
       case ServerMessageTypes.CLOSE :
         Console.Log('Close Connection' , 1 , 'wss');
         connection.close();
@@ -208,6 +203,7 @@ var CanvasEngine = {
 //===========================================================
 //===================== PLAYER INFO =========================
 //===========================================================
+//Il messaggio si occupa nel darci i dati del nostro personaggio
       case ServerMessageTypes.UNIT_INFO :
         Console.Log('Param Player' , 1 , 'wss');
 		    if(data.i) { this._checkValue(data.i, 'int'); }
@@ -229,16 +225,31 @@ var CanvasEngine = {
     			data.pid,
     			data.uid
     		);
+        Interface.startHUD();
+
+        break;
+
+//===========================================================
+//=================== PLAYER INVENTORY ======================
+//===========================================================
+//Il messaggio si occupa di fornire ogni oggetto presente nel nostro inventario
+      case ServerMessageTypes.PLAYER_INVENTORY :
+        Console.Log('Player Inventory' , 1 , 'wss');
+
+        for(var i in data.w) {
+          player.inventory.push(data.w[i]);
+        }
 
         break;
 
 //===========================================================
 //==================== OTHER PLAYERS ========================
 //===========================================================
+//Il messaggio si occupa di segnalare ogni nuovo giocatore che si incontra nella propria visuale
       case ServerMessageTypes.PLAYERS_INFO :
         Console.Log('Other Player' , 1 , 'wss');
     		if(data.i) { this._checkValue(data.i, 'int'); }
-        /* b: 400 e: 30 g: 2 h: 40 i: 120 me: 30 mh: 40 mt: 3 n: "Nik" pid: 2 r: 1 s: 80 uid: 2 v: 2 x: 312 y: 465 */
+
         GAME.OTHER_PLAYERS[data.uid] = new Game.Player(
     			data.x,
     			data.y,
@@ -261,16 +272,20 @@ var CanvasEngine = {
 //===========================================================
 //==================== PLAYERS POSITION =====================
 //===========================================================
+//Il messaggio si occupa nel fornire la posizione degli altri personaggi
       case ServerMessageTypes.PLAYERS_POSITION :
-    		GAME.OTHER_PLAYERS[data.uid].changePosition(
-    			data.x,
-    			data.y
-    		);
+        if(GAME.OTHER_PLAYERS[data.uid]) {
+          GAME.OTHER_PLAYERS[data.uid].changePosition(
+      			data.x,
+      			data.y
+      		);
+        }
         break;
 
 //===========================================================
 //===================== MAP + ITEMS =========================
 //===========================================================
+//Il messaggio si occupa di fornire gli elementi circostanti al giocatore
       case ServerMessageTypes.MAP_INFO :
         Console.Log('Map Info' , 1 , 'map');
 
@@ -281,19 +296,43 @@ var CanvasEngine = {
           'ground' : data.i.ground_icon
         };
         //Info oggetti intorno al pg
-        if(data.m.length > 0) {
-          for(var i = 0 ; i < data.m.length ; i++) {
-            GAME.ITEMS[data.m[i].id] = data.m[i];
+        for(var i in data.m) {
+          var item = data.m[i];
+
+          if(item) {
+            //Salvo oggetto parsificato
+            GAME.ITEMS[item.id] = item;
           }
         }
 
         Interface.createBar('MENU_BAR');
-        Game.play(); // PLAY THE GAME
+
+
+        if(!GAME.TERRAIN || GAME.TERRAIN.name !== GAME.MAP_INFO.name) {
+          GAME.TERRAIN = {
+            name : GAME.MAP_INFO.name,
+            img : CanvasEngine.createImage(PATH.ITEMS + GAME.MAP_INFO.ground , true)
+          }
+        }
+
+        GAME.ROOM = {
+          width: 5000,
+          height: 3000,
+          map: new Game.Map(5000, 3000)
+        };
+
+        // generate a large image texture for the room
+        GAME.ROOM.map.generate();
+        GAME.CAMERA = new Game.Camera(0 , 0, window.innerWidth, window.innerHeight, 10000, 10000);
+        GAME.CAMERA.follow(player, window.innerWidth/2, window.innerHeight/2);
+
+        //Game.play(); // PLAY THE GAME
         break;
 
 //===========================================================
 //======================= LOGOUT ============================
 //===========================================================
+//Il messaggio si occupa della cancellazione dalla mappa di un pg al suo logout
       case ServerMessageTypes.LOGOUT :
         Console.Log('Logout Unit' , 1 , 'map');
 
@@ -303,6 +342,7 @@ var CanvasEngine = {
 //===========================================================
 //===================== MAP DETAILS =========================
 //===========================================================
+//Il messaggio si occupa di fornire gli elementi di mappa esistenti nel gioco
       case ServerMessageTypes.LANDS :
         Console.Log('Lands' , 1 , 'map');
 
@@ -311,6 +351,13 @@ var CanvasEngine = {
           var item = data.a[i];
           if(item) {
             GAME.INFO.LANDS[item.id] = item;
+
+
+            var path = PATH.ITEMS + item.icon + '.png';
+            var img = new Image();
+            img.onload = function () {};
+            img.src = path;
+            GAME.LOADED_IMAGES[path] = img;
           }
         }
         break;
@@ -318,6 +365,7 @@ var CanvasEngine = {
 //===========================================================
 //======================= OBJECTS ===========================
 //===========================================================
+//Il messaggio si occupa nel fornire la lista di oggetti esistenti nel gioco
       case ServerMessageTypes.OBJECTS :
         Console.Log('Objects' , 1 , 'map');
 
@@ -325,6 +373,12 @@ var CanvasEngine = {
           var item = data.a[i];
           if(item) {
             GAME.INFO.OBJECTS[item.id] = item;
+
+            var path = PATH.OBJECTS + item.icon + '.png';
+            var img = new Image();
+            img.onload = function () {};
+            img.src = path;
+            GAME.LOADED_IMAGES[path] = img;
           }
         }
         break;
@@ -332,6 +386,7 @@ var CanvasEngine = {
 //===========================================================
 //==================== BAD COLLISION ========================
 //===========================================================
+//Il messaggio si occupa della segnalazioni di collisioni non rispettate
       case ServerMessageTypes.UNIT_COLLISION :
         Console.Log('Bad Collision' , 1 , 'error');
 
@@ -342,6 +397,7 @@ var CanvasEngine = {
 //===========================================================
 //====================== LIST UNIT ==========================
 //===========================================================
+//Il messaggio si occupa nel fornire la lista dei giocatori dell'utente, cosi da poter scegliere con quale giocare
       case ServerMessageTypes.LIST_UNIT :
         Console.Log('List Unit' , 1 , 'map');
 
@@ -352,23 +408,79 @@ var CanvasEngine = {
         Interface.chooseUnit(data.a , WINDOWS['CHOOSE_UNIT'].body);
         break;
 
+//===========================================================
+//=================== GET DROP ITEM =========================
+//===========================================================
+//Il messaggio si occupa del drop dell'oggetto, dando la conferma del server che � stato preso
+      case ServerMessageTypes.GET_DROP_ITEM :
+        Console.Log('Get Drop Item' , 1 , 'map');
+        SystemInfo.write('Hai preso ' + SELECTION_MOUSE.items[0]);
+
+        for(var i in data.i) {
+          player.inventory.push(parseInt(data.i[i]));
+          var data_k = parseInt(data.k);
+
+          for(var j in GAME.ITEMS[data_k].object_id) {
+            if(GAME.ITEMS[data_k].object_id[j] === data.i[i]) {
+              GAME.ITEMS[data_k].object_id.splice(j , 1);
+            }
+          }
+
+          if(GAME.ITEMS[data_k].object_id.length === 0) {
+            delete GAME.ITEMS[data_k];
+            //Deselezione dell'oggetto scomparso
+            SELECTION_MOUSE = false;
+          }
+
+        }
+
+        //Aggiornamento dell'inventario se aperto
+        if(WINDOWS['INVENTORY']) {
+          Interface.createInventory(WINDOWS['INVENTORY'].id , player.inventory , 2);
+        }
+        break;
+
+//===========================================================
+//=================== UPDATE DROP ITEM ======================
+//===========================================================
+//Il messaggio si occupa di fare l'update degli oggetti a terra, togliendo quelli che altri giocatori hanno preso
+      case ServerMessageTypes.UPDATE_DROP_ITEMS :
+        Console.Log('Update Drop Item' , 1 , 'map');
+
+        for(var i in data.i) {
+          var data_k = parseInt(data.k);
+
+          for(var j in GAME.ITEMS[data_k].object_id) {
+            if(GAME.ITEMS[data_k].object_id[j] === data.i[i]) {
+              GAME.ITEMS[data_k].object_id.splice(j , 1);
+            }
+          }
+
+          if(GAME.ITEMS[data_k].object_id.length === 0) {
+            delete GAME.ITEMS[data_k];
+          }
+        }
+        break;
+//===========================================================
+//=================== LOCK CONFIRMED ========================
+//===========================================================
+//Il messaggio si occupa di gestire la conferma del permesso di prendere gli oggetti
+      case ServerMessageTypes.LOCK_OK :
+        Console.Log('Permission LOCK Confirmed' , 1 , 'map');
+        createDropList(SELECTION_MOUSE.items);
+        break;
+//===========================================================
+//===================== LOCK DENIED =========================
+//===========================================================
+//Il messaggio si occupa di gestire la negazione del permesso di prendere gli oggetti
+      case ServerMessageTypes.LOCK_FAIL :
+        Console.Log('Permission LOCK Denied' , 1 , 'map');
+        createDropList_READONLY(SELECTION_MOUSE.items);
+        break;
+
     }
 
-    //Descrizione
-
-    /*if(data.pid) { Console.Log(' [ PLAYER ID ] : ' + data.pid , 2 , 'wss'); }
-    if(data.uid) { Console.Log(' [ UNIT ID ] : ' + data.uid , 2 , 'wss'); }
-    if(data.i) { Console.Log(' [ MAP ] : ' + data.i.name , 2 , 'wss'); }
-    if(data.n) { Console.Log(' [ NOME ] : ' + data.n , 2 , 'wss'); }
-    if(data.x) { Console.Log(' [ X ] : ' + data.x , 2 , 'wss'); }
-    if(data.y) { Console.Log(' [ Y ] : ' + data.y , 2 , 'wss'); }
-    if(data.h) { Console.Log(' [ HP ] : ' + data.h , 2 , 'wss'); }
-    if(data.s) { Console.Log(' [ NORMAL SPEED ] : ' + data.s , 2 , 'wss'); }
-    if(data.b) { Console.Log(' [ VISIBILITY ] : ' + data.b , 2 , 'wss'); }
-    if(data.r) { Console.Log(' [ RAZZA ] : ' + WS_Race[data.r] , 2 , 'wss'); }
-    if(data.g) { Console.Log(' [ GENERE ] : ' + WS_Gender[data.g] , 2 , 'wss'); }
-    if(data.v) { Console.Log(' [ VARIANTE ] : ' + WS_Variant[data.v] , 2 , 'wss'); }*/
-
+    GAME.DRAW = true;
   }
 }
 

@@ -53,22 +53,27 @@
 
 function clickReporter(e) {
   //e.button -> 0 left === 1 middle === 2 right
-  console.log('CLICK' , e.x, e.y, e.button);
+  //console.log('CLICK' , e.x, e.y, e.button);
 
   if(e.button === 0) {
     //MOVE PLAYER
     if(player) {
-			player.checkElementPosition(e.x, e.y);
-			player.checkPlayersPosition(e.x, e.y);
+			var item_sel = player.checkElementPosition(e.x, e.y);
+			var player_sel = player.checkPlayersPosition(e.x, e.y);
+
+			//Se non ho selezionato nulla deseleziono
+			if(!item_sel && !player_sel) {
+				removeSelection();
+			}
+
     }
   }
 
   if(e.button === 2) {
 		player.goToPosition(e.x, e.y);
-    //SHOW CUSTOM CONTEXT MENU
   }
 
-  return false;
+	return false;
 }
 
 //DISABLE CONTEXT MENU (RIGHT CLICK ON MOUSE)
@@ -80,4 +85,22 @@ if (document.addEventListener) {
   document.attachEvent('oncontextmenu', function() {
     window.event.returnValue = false;
   });
+}
+
+//=========================================================
+//====================== CHECK DRAW =======================
+//=========================================================
+
+function checkDraw() {
+
+	if(	Game.controls.left ||
+			Game.controls.right ||
+			Game.controls.up ||
+			Game.controls.down ||
+			player.destination) {
+
+		GAME.DRAW = true;
+
+	}
+
 }

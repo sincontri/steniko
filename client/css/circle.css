@@ -103,12 +103,11 @@
 .c100.p98 .fill,
 .c100.p99 .fill,
 .c100.p100 .fill {
-  background:green;
+  /*background:green;*/
   position: absolute;
-  /*border: 12px solid #FFF;*/
-  width: 92px;
-  height: 92px;
-  clip: rect(0px, 46px, 92px, 0px);
+  width: 150px;
+  height: 150px;
+  clip: rect(0px, 75px, 150px, 0px);
   border-radius: 50%;
   -webkit-transform: rotate(0deg);
   -moz-transform: rotate(0deg);
@@ -224,13 +223,12 @@
   transform: rotate(180deg);
 }
 .c100 {
-  position: relative;
-  font-size: 92px;
-  width: 92px;
-  height: 92px;
+  /*position: relative;*/
+  font-size: 150px;
+  width: 150px;
+  height: 150px;
   border-radius: 50%;
   float: left;
-  background-color: black;
 }
 .c100 *,
 .c100 *:before,
@@ -278,12 +276,12 @@
 .c100:after {
   position: absolute;
   z-index:110;
-  top: 6px;
-  left: 6px;
+  top: 35px;
+  left: 35px;
   display: block;
   content: " ";
   border-radius: 50%;
-  background-color: blue;
+  background-color: black;
   width: 80px;
   height: 80px;
   -webkit-transition-property: all;

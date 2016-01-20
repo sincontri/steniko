@@ -20,7 +20,7 @@
     this.player_id = player_id;
     this.unit_id = unit_id;
 
-    this.path =  PATH.PLAYERS;
+    this.path = PATH.PLAYERS;
 
     // ATTENTION:
     // It represents the player position on the world(room), not the canvas position
@@ -50,11 +50,25 @@
     this.img.src = buildImage(this.race , this.variant , this.gender);
 
     // Grandezza Immagine
-    this.width = 32;
-    this.height = 32;
+    this.width = this.img.width;
+    this.height = this.img.height;
+    this.width_half = this.img.width/2;
+    this.height_half = this.img.height/2;
 
     // Gestione giocatore
     this.destination = false; //Se true segue una coordinata, viene messa a false se viene premuto un tasto di movimento dalla tastiera
+    this.status = false; //Se a valore serve per capire l'azione richiesta da eseguire (DROP,ATTACK, ecc)
+    this.inventory = [] //Inventario giocatore organizzato in array
+    //Equipaggiamento
+    this.wear = {
+      'HEAD':null,
+      'BODY':null,
+      'LEFT_HAND':null,
+      'RIGHT_HAND':null,
+      'BOOTS':null,
+      'RING_1':null,
+      'RING_2':null
+    };
   }
 
   Player.prototype.update = function(step){
@@ -65,6 +79,7 @@
 
     if(Game.controls.left || Game.controls.right || Game.controls.up || Game.controls.down) {
       this.destination = { x:0 , y:0 };
+      this.status = false;
     }
     if(Game.controls.left) { this.destination.x = 0 - this.speed * step; }
     if(Game.controls.right) { this.destination.x = 0 + this.speed * step; }
@@ -75,6 +90,9 @@
     //======================== MOUSE ==========================
     //=========================================================
     if(this.destination) {
+      //Distruggi il possibile context menu aperto
+      destroyWindow('contextMenu');
+
       if(Math.round(this.destination.x) < 0) {
         this.x -= this.speed * step;
         this.destination.x += this.speed * step;
@@ -111,31 +129,27 @@
         }
       }
 
-      if(Math.round(this.destination.x) === 0 && Math.round(this.destination.y) === 0) {
+        if( Math.round(this.destination.x) < (this.speed * step) &&
+            Math.round(this.destination.x) > -(this.speed * step) &&
+            Math.round(this.destination.y) > -(this.speed * step) &&
+            Math.round(this.destination.y) < (this.speed * step)) {
         this.destination = false;
+
+        this.executeStatus();
       }
     }
 
   }
 
   //Se passati dei parametri disegna il personaggio in quelle coordinate, altrimenti lo disegna al centro
-  Player.prototype.draw = function(x, y) {
-    if(!x && !y) {
-      x = (canvas.width/2);
-      y = (canvas.height/2);
-    }
-
-    context.save();
-
+  Player.prototype.draw = function() {
     //Image player
-    context.drawImage(this.img, (x - (this.width/2)), (y - (this.height/2)));
+    context.drawImage(this.img, this.x - GAME.CAMERA.xView, this.y - GAME.CAMERA.yView);
 
     //Name Player
     context.font="12px sans-serif";
     context.fillStyle="white";
-    context.fillText(this.name, (x - (context.measureText(this.name).width/2)), (y - (this.height/2)));
-
-    context.restore();
+    context.fillText(this.name, (this.x + (context.measureText(this.name).width/2)) - GAME.CAMERA.xView, this.y - GAME.CAMERA.yView);
   }
 
   Player.prototype.changeImg = function(img) {
@@ -170,8 +184,8 @@
   Player.prototype.goToPosition = function (x , y) {
     //Setto la destinazione da raggiungere
     this.destination = {
-      'x': x - (canvas.width/2),
-      'y': y - (canvas.height/2)
+      'x': GAME.CAMERA.xView + (x - this.x),
+      'y': GAME.CAMERA.yView + (y - this.y)
     }
   }
 
@@ -181,7 +195,7 @@
       var i = keys[j];
       if(GAME.ITEMS[i].land_id) {
         var item = GAME.INFO.LANDS[GAME.ITEMS[i].land_id];
-        var pathImage = CanvasEngine.buildPathImage(PATH.ITEMS , GAME.ITEMS[i].land_id);
+        var pathImage = PATH.ITEMS + GAME.INFO.LANDS[ GAME.ITEMS[i].land_id ].icon + '.png';
     		if(item.obstacle && GAME.LOADED_IMAGES[pathImage]) {
 
           if (this.x < GAME.ITEMS[i].x + (GAME.LOADED_IMAGES[pathImage].width - COLLISION_TOLLERANCE) &&
@@ -199,28 +213,26 @@
   }
 
   Player.prototype.checkElementPosition = function(x, y) {
-    x = this.x + (x - (canvas.width/2));
-    y = this.y + (y - (canvas.height/2));
+    x = GAME.CAMERA.xView + x;
+    y = GAME.CAMERA.yView + y;
+
     var keys = Object.keys(GAME.ITEMS);
     for(var j = 0 ; j < keys.length ; j++) {
       var i = keys[j];
 
       if(GAME.ITEMS[i].object_id) {
-        var item = JSON.parse(GAME.ITEMS[i].object_id);
-        for(var z = 0 ; z < item.length ; z++) {
+        var item = GAME.ITEMS[i].object_id;
+        for(var z in item) {
           var info = GAME.INFO.OBJECTS[item[z]];
 
-          var pathImage = CanvasEngine.buildPathImage(PATH.OBJECTS , item[z] , 'objects');
+          var pathImage = PATH.OBJECTS + info.icon + '.png';
       		if(GAME.LOADED_IMAGES[pathImage]) {
             if (x < GAME.ITEMS[i].x + GAME.LOADED_IMAGES[pathImage].width &&
       				x > GAME.ITEMS[i].x &&
       				y < GAME.ITEMS[i].y + GAME.LOADED_IMAGES[pathImage].height &&
       				y > GAME.ITEMS[i].y) {
 
-              if(!WINDOWS['SELECTION_OBJECT']) {
-                WINDOWS['SELECTION_OBJECT'] = Interface.createWindow('selectionUnit' , 'STATUS' , 250 , 200);
-              }
-              Interface.selectionObject(info , WINDOWS['SELECTION_OBJECT'].id);
+              selectionItem(pathImage , info , item , i);
               return true;
 
       			}
@@ -229,26 +241,74 @@
         }
       }
     }
+    return false;
   }
 
   Player.prototype.checkPlayersPosition = function(x, y) {
-    x = this.x + (x - (canvas.width/2));
-    y = this.y + (y - (canvas.height/2));
+    x = GAME.CAMERA.xView + x;
+    y = GAME.CAMERA.yView + y;
 
     var keys = Object.keys(GAME.OTHER_PLAYERS);
     for(var j = 0 ; j < keys.length ; j++) {
-      var player = GAME.OTHER_PLAYERS[keys[j]];
+      var players = GAME.OTHER_PLAYERS[keys[j]];
 
-      if (x < player.x + (player.img.width/2) &&
-				x > player.x - (player.img.width/2) &&
-				y < player.y + (player.img.height/2) &&
-				y > player.y - (player.img.height/2)) {
+      if (x < players.x + players.img.width &&
+				x > players.x &&
+				y < players.y + players.img.height &&
+				y > players.y) {
 
-        WINDOWS['SELECTION_OBJECT'] = Interface.createWindow('selectionUnit' , 'STATUS' , 250 , 200);
-        Interface.selectionPlayer(player , WINDOWS['SELECTION_OBJECT'].id);
+        selectionPlayer(players);
         return true;
-
 			}
+    }
+    return false;
+  }
+
+  Player.prototype.showContextMenu = function(x, y , mode) {
+    if(WINDOWS['CONTEXT_MENU']) {
+      destroyWindow('contextMenu');
+    }
+    WINDOWS['CONTEXT_MENU'] = Interface.createContextMenu('contextMenu' , 100 , x , y, mode);
+  }
+
+  Player.prototype.executeStatus = function() {
+    if(this.status) {
+      switch(this.status) {
+
+        //=========================================================
+        //======================= DROP ITEM =======================
+        //=========================================================
+        case StatusPlayer.DROP :
+          if(SELECTION_MOUSE) {
+            if(SELECTION_MOUSE.items) {
+
+              if(SELECTION_MOUSE.items.length > 1) {
+                //==================================
+                //========== MULTI ITEM ============
+                //==================================
+                console.log('multi item')
+                //Lock
+                connection.send(JSON.stringify({
+              		mt : ClientMessageTypes.LOCK_DROP_ITEM,
+              		m : GAME.MAP_INFO.id
+              	}));
+              } else {
+                //==================================
+                //========== SINGLE ITEM ===========
+                //==================================
+                //Get Item
+                connection.send(JSON.stringify({
+              		mt : ClientMessageTypes.GET_DROP_ITEM,
+              		k : [SELECTION_MOUSE.items[0]],
+                  i : SELECTION_MOUSE.item_id
+              	}));
+              }
+
+            }
+          }
+          break;
+      }
+      this.status = false;
     }
   }
 

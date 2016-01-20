@@ -2,10 +2,14 @@
 //=========================== VARIABLES ==============================
 //====================================================================
 
-var connection = null;
-var canvas = null;
-var context = null;
-var player = null;
+//Player
+var player;
+//Main webSocket
+var connection,check_connection;
+//Main Canvas
+var canvas,context;
+//Vision
+var maskCanvas,maskCtx;
 
 //Game Object
 var GAME = {
@@ -24,17 +28,37 @@ var GAME = {
   },
   //Contiene la lista delle unita create dall'utente
   'LIST_UNIT': [],
-  'INVENTORY': []
+  'INVENTORY': [],
+  //HUD
+  'HUD': {},
+  //Flag per fare la draw o meno
+  'DRAW' : false,
+  //Variabili che tengono in memoria variabili che ricalcolo spesso
+  'CANVAS_WIDTH' : 0,
+  'CANVAS_HEIGHT' : 0,
+  'CANVAS_WIDTH_HALF' : 0,
+  'CANVAS_HEIGHT_HALF' : 0,
+  'SELECT_ITEM' : {},
+  'TIMER_LOCK' : 10 //Timer lock in multi item in secondi
 };
 
 var WINDOWS = {};
 var MENU_BAR = [
-  { id:'INVENTORY', icon:'fa-archive', listener:'createInventory' }
+  { id:'INVENTORY', icon:'fa-archive', listener:'createInventory' },
+  { id:'CHARACTER', icon:'fa-male', listener:'createCharacter' },
 ];
 
 //====================================================================
 //======================== CALLBACK GOOGLE ===========================
 //====================================================================
+
+function checkConnection() {
+  if(check_connection) {
+    //document.body.style.cursor = 'default';
+  } else {
+    console.log('WEBSOCKET NOT WORKING');
+  }
+}
 
 function signInCallback(authResult) {
   CanvasEngine._checkValue(authResult['code'], 'string');
@@ -46,9 +70,12 @@ function signInCallback(authResult) {
 
   connection = new WebSocket(WEBSOCKET, encodeURIComponent(authResult['code']));
 
+  //Check se la connessione � avvenuta o meno
+  //document.body.style.cursor = 'wait';
+  setTimeout(checkConnection , 1500);
+
   connection.onopen = function () {
     Console.Log('Send Open Message' , 1 , 'cmd');
-    connection.send('Ping');
   };
 
   // Loggare poi gli errori
@@ -60,6 +87,7 @@ function signInCallback(authResult) {
 
   // Log messages from the server
   connection.onmessage = function (e) {
+    check_connection = true;
     CanvasEngine.onMessage(e.data);
   };
 }
@@ -67,6 +95,20 @@ function signInCallback(authResult) {
 //====================================================================
 //============================= GAME =================================
 //====================================================================
+
+window.onload = function() {
+  var button = document.getElementById('signinButton');
+  button.src= "img/google.png";
+  button.onload = function() {
+    button.style.width = '300px';
+    button.style.marginTop = '-33px';
+    button.style.marginLeft = '-150px';
+  }
+
+  document.getElementById('signinButton').addEventListener('click', function() {
+    auth2.grantOfflineAccess({'redirect_uri': 'postmessage'}).then(signInCallback);
+  });
+}
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -80,49 +122,58 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  document.getElementById('signinButton').addEventListener('click', function() {
-    auth2.grantOfflineAccess({'redirect_uri': 'postmessage'}).then(signInCallback);
-  });
-
 //=========================================================
 //===================== DECLARATIONS ======================
 //=========================================================
 
 	(function(){
 
+    //Game Level
     canvas = document.getElementById("canvas");
 		context = canvas.getContext("2d");
+    //Vision Level
+    maskCanvas = document.createElement('canvas');
+    maskCtx = maskCanvas.getContext('2d');
 
 //=========================================================
 //====================== LOOP GAME ========================
 //=========================================================
 
 		var update = function() {
-
-		  Drawer.Check();
 		  player.update(STEP);
+      GAME.CAMERA.update();
 		}
 
 		var draw = function() {
 
-      //Reset Schermo
-			context.clearRect(0, 0, canvas.width, canvas.height);
+      checkDraw();
+      if(GAME.DRAW === false) {
+        context.restore();
+        return false;
+      }
 
-      Drawer.Terrain();
+      //Reset Schermo
+      Drawer.Check();
+			context.clearRect(0, 0, GAME.CANVAS_WIDTH, GAME.CANVAS_HEIGHT);
+      GAME.ROOM.map.draw(GAME.CAMERA.xView, GAME.CAMERA.yView);
+
+      //Drawer.Terrain();
       Drawer.Items();
       Drawer.Objects();
 
       Drawer.Players();
+      Drawer.Selector();
       player.draw();
 
       Drawer.Vision();
       Drawer.Hud();
 
+      GAME.DRAW = false;
 		}
 
 //=========================================================
 
-		var gameLoop = function(){
+		var gameLoop = function() {
 			update();
 			draw();
 		}
@@ -134,6 +185,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	var sendPosition = -1;
 
     Game.play = function(){
+      document.getElementById('systemInfo').style.display = 'block';
 			if(runningId == -1){
 				runningId = setInterval(function() {
 					gameLoop();

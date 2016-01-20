@@ -15,6 +15,7 @@
   <script src="https://apis.google.com/js/client:platform.js?onload=start"></script>
 
   <script type="text/javascript" src="./js/library/interact.js"></script>
+  <script type="text/javascript" src="./js/library/jquery.knob.js"></script>
   <!-- END Pre-requisites -->
 
   <!-- Include files -->
@@ -23,6 +24,8 @@
   <script type="text/javascript" src="js/Log.js"></script>
   <script type="text/javascript" src="js/Input.js"></script>
   <script type="text/javascript" src="js/Interface.js"></script>
+  <script type="text/javascript" src="js/Drawer.js"></script>
+  <script type="text/javascript" src="js/SystemInfo.js"></script>
 
   <!-- Game Library -->
   <script src="./js/library/init.js"></script>
@@ -35,32 +38,32 @@
   </head>
 
 <body>
-  <img src="img/google.png" id="signinButton" class="absolute" alt="Sign in with Google" title="Sign in with Google">
+  <img src="img/loader.gif" id="signinButton" class="absolute" alt="Sign in with Google" title="Sign in with Google">
+
+  <!-- PLAYER HUD -->
+  <div id="player_HUD" class="absolute">
+    <div class="relative">
+      <div style="position:absolute;bottom:10px;left:0px;height:180px;width:180px;">
+        <div style="position:relative;width:250px;margin:auto">
+          <div style="position:absolute;left:10px;top:10px;">
+            <input id="player_HP" style="visibility:hidden">
+          </div>
+          <div style="position:absolute;left:40px;top:40px">
+            <input id="player_ENERGY" style="visibility:hidden">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div id="interface" class="totale">
 
-    <!-- PLAYER HUD -->
-    <div id="player_HUD" class="absolute">
-      <div class="relative">
-
-        <div id="player_HP" class="c100 p00">
-          <span id="player_HP_N"></span>
-          <div class="slice">
-            <div class="bar"></div>
-            <div class="fill"></div>
-          </div>
-        </div>
-
-        <div id="player_ENERGY" class="c100 p00">
-          <span id="player_ENERGY_N"></span>
-          <div class="slice">
-            <div class="bar"></div>
-            <div class="fill"></div>
-          </div>
-        </div>
-
-      </div>
-    </div>
+    <div id="messageInterface" class="absolute"></div>
+    <textarea readonly id="systemInfo" style="display:none;">Questa e' la system info</textarea>
+    <!--<div class="chat">
+      <textarea readonly ></textarea>
+      <input type="text" id="chat">
+    </div>-->
 
   </div>
   <canvas id="canvas" class="totale absolute">

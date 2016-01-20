@@ -1,146 +1,81 @@
-var Drawer = {
+// wrapper for "class" Map
+(function(){
+  function Map(width, height){
+    // map dimensions
+    this.width = width;
+    this.height = height;
 
-  //Disegno oggetti della mappa
-  Items : function() {
-
-    if(Object.keys(GAME.ITEMS).length > 0) {
-
-      var keys = Object.keys(GAME.ITEMS);
-      for(var j = 0 ; j < keys.length ; j++) {
-        var i = keys[j];
-
-        //LAND
-        if(GAME.ITEMS[i].land_id) {
-          //Calcolo coordinata
-          var item_x = ((canvas.width/2) - (player.width/2)) + (GAME.ITEMS[i].x - player.x);
-          var item_y = ((canvas.height/2) - (player.height/2)) + (GAME.ITEMS[i].y - player.y);
-          var pathImage = CanvasEngine.buildPathImage(PATH.ITEMS , GAME.ITEMS[i].land_id , 'lands');
-          if(!GAME.LOADED_IMAGES[pathImage]) {
-            var img = new Image();
-            img.onload = function () {};
-            img.src = pathImage;
-            GAME.LOADED_IMAGES[pathImage] = img;
-          }
-          context.drawImage(GAME.LOADED_IMAGES[pathImage] , item_x, item_y);
-        }
-
-      }
-
-    }
-
-  },
-
-  //Disegno equipaggiamenti presenti in mappa
-  Objects : function() {
-    if(Object.keys(GAME.ITEMS).length > 0) {
-
-      var keys = Object.keys(GAME.ITEMS);
-      for(var j = 0 ; j < keys.length ; j++) {
-        var i = keys[j];
-
-        //OBJECT
-        if(GAME.ITEMS[i].object_id) {
-          //Calcolo coordinata
-          var item_x = ((canvas.width/2) - (player.width/2)) + (GAME.ITEMS[i].x - player.x);
-          var item_y = ((canvas.height/2) - (player.height/2)) + (GAME.ITEMS[i].y - player.y);
-
-          var arr_items = JSON.parse(GAME.ITEMS[i].object_id);
-
-          for(var x = 0 ; x < arr_items.length ; x++) {
-
-            var pathImage = CanvasEngine.buildPathImage(PATH.OBJECTS , arr_items[x] , 'objects');
-
-            if(!GAME.LOADED_IMAGES[pathImage]) {
-              var img = new Image();
-              img.onload = function () {};
-              img.src = pathImage;
-              GAME.LOADED_IMAGES[pathImage] = img;
-            }
-            context.drawImage(GAME.LOADED_IMAGES[pathImage] , item_x, item_y);
-
-          }
-
-        }
-      }
-    }
-  },
-
-  //Disegno giocatori
-  Players : function() {
-    var keys = Object.keys(GAME.OTHER_PLAYERS);
-  	if(keys.length > 0) {
-
-  		for(var i = 0 ; i < keys.length ; i++) {
-
-  		  //Calcolo coordinata
-  		  var item_x = ((canvas.width/2) - (player.width/2)) + (GAME.OTHER_PLAYERS[keys[i]].x - player.x);
-  		  var item_y = ((canvas.height/2) - (player.height/2)) + (GAME.OTHER_PLAYERS[keys[i]].y - player.y);
-
-        GAME.OTHER_PLAYERS[keys[i]].draw(item_x, item_y);
-  		}
-
-  	}
-  },
-
-  //Disegno terreno
-  Terrain : function() {
-
-    //Creazione terreno
-    if(!GAME.TERRAIN || GAME.TERRAIN.name !== GAME.MAP_INFO.name) {
-      GAME.TERRAIN = {
-        name : GAME.MAP_INFO.name,
-        img : CanvasEngine.createImage(PATH.ITEMS + GAME.MAP_INFO.ground)
-      }
-    }
-
-    //Senza nebbia
-    var ptrn = context.createPattern(GAME.TERRAIN.img , 'repeat');
-    context.rect(0, 0, canvas.width, canvas.height);
-    context.fillStyle = ptrn;
-    context.fill();
-
-  },
-
-  //Disegno limitazione della visione
-  Vision : function() {
-
-    //context.globalAlpha = 0.4;
-    var centerX = canvas.width / 2;
-    var centerY = canvas.height / 2;
-    var radius = player.vision;
-
-    var maskCanvas = document.createElement('canvas');
-    maskCanvas.width = canvas.width;
-    maskCanvas.height = canvas.height;
-    var maskCtx = maskCanvas.getContext('2d');
-
-    maskCtx.fillStyle = "black";
-    maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
-    maskCtx.globalCompositeOperation = 'xor';
-    maskCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
-    maskCtx.fill();
-
-    context.drawImage(maskCanvas, 0, 0);
-
-  },
-
-  //Disegno Parametri
-  Hud : function() {
-    context.font="14px sans-serif";
-    context.fillStyle="white";
-    context.fillText('HP : ' + player.hp, (canvas.width-100), (canvas.height-90));
-    context.fillText('SPEED : ' + player.speed, (canvas.width-100), (canvas.height-70));
-    context.fillText('VISION : ' + player.vision, (canvas.width-100), (canvas.height-50));
-
-    document.getElementById('player_HP_N').innerHTML = player.current_hp;
-    document.getElementById('player_HP').className = 'c100 p' + Math.round((player.current_hp * 100)/player.hp);
-
-    document.getElementById('player_ENERGY_N').innerHTML = player.current_energy;
-    document.getElementById('player_ENERGY').className = 'c100 p' + Math.round((player.current_energy * 100)/player.energy);
-  },
-
-  Check : function() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    // map texture
+    this.image = null;
   }
-};
+
+  // generate an example of a large map
+  Map.prototype.generate = function() {
+
+    var ctx = document.createElement("canvas").getContext("2d");
+    ctx.canvas.width = this.width;
+    ctx.canvas.height = this.height;
+    var ptrn = ctx.createPattern(GAME.TERRAIN.img , 'repeat');
+
+    var rows = ~~(this.width/44) + 1;
+    var columns = ~~(this.height/44) + 1;
+
+    ctx.save();
+
+    ctx.rect(0, 0, this.width, this.height);
+    ctx.fillStyle = ptrn;
+    ctx.fill();
+
+    ctx.restore();
+
+    // store the generate map as this image texture
+    this.image = new Image();
+    this.image.src = ctx.canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");
+
+    // clear context
+    ctx = null;
+
+  }
+
+  // draw the map adjusted to camera
+  Map.prototype.draw = function(xView, yView){
+    // easiest way: draw the entire map changing only the destination coordinate in canvas
+    // canvas will cull the image by itself (no performance gaps -> in hardware accelerated environments, at least)
+    //context.drawImage(this.image, 0, 0, this.image.width, this.image.height, -xView, -yView, this.image.width, this.image.height);
+
+    // didactic way:
+
+    var sx, sy, dx, dy;
+    var sWidth, sHeight, dWidth, dHeight;
+
+    // offset point to crop the image
+    sx = xView;
+    sy = yView;
+
+    // dimensions of cropped image
+    sWidth =  context.canvas.width;
+    sHeight = context.canvas.height;
+
+    // if cropped image is smaller than canvas we need to change the source dimensions
+    if(this.image.width - sx < sWidth) {
+      sWidth = this.image.width - sx;
+    }
+    if(this.image.height - sy < sHeight) {
+      sHeight = this.image.height - sy;
+    }
+
+    // location on canvas to draw the croped image
+    dx = 0;
+    dy = 0;
+    // match destination with source to not scale the image
+    dWidth = sWidth;
+    dHeight = sHeight;
+
+    context.drawImage(this.image, sx, sy, sWidth, sHeight, dx, dy, dWidth, dHeight);
+
+  }
+
+  // add "class" Map to our Game object
+  Game.Map = Map;
+
+})();

@@ -373,6 +373,7 @@ var CanvasEngine = {
           var item = data.a[i];
           if(item) {
             GAME.INFO.OBJECTS[item.id] = item;
+            GAME.INFO.OBJECTS[item.id].values = JSON.parse(item.values);
 
             var path = PATH.OBJECTS + item.icon + '.png';
             var img = new Image();
@@ -411,10 +412,10 @@ var CanvasEngine = {
 //===========================================================
 //=================== GET DROP ITEM =========================
 //===========================================================
-//Il messaggio si occupa del drop dell'oggetto, dando la conferma del server che � stato preso
+//Il messaggio si occupa del drop dell'oggetto, dando la conferma del server che e stato preso
       case ServerMessageTypes.GET_DROP_ITEM :
         Console.Log('Get Drop Item' , 1 , 'map');
-        SystemInfo.write('Hai preso ' + SELECTION_MOUSE.items[0]);
+        SystemInfo.write('Hai preso ' + GAME.INFO.OBJECTS[SELECTION_MOUSE.items[0]].name);
 
         for(var i in data.i) {
           player.inventory.push(parseInt(data.i[i]));
@@ -478,9 +479,19 @@ var CanvasEngine = {
         createDropList_READONLY(SELECTION_MOUSE.items);
         break;
 
+//===========================================================
+//===================== UPDATE SPEED ========================
+//===========================================================
+//Il messaggio si occupa di gestire la negazione del permesso di prendere gli oggetti
+      case ServerMessageTypes.UPDATE_SPEED :
+        Console.Log('Update Speed' , 1 , 'map');
+        player.speed = data.s;
+        player.max_speed = data.r;
+        break;
+
     }
 
-    GAME.DRAW = true;
+    GAME.DRAW = 5;
   }
 }
 

@@ -99,7 +99,7 @@ function checkDraw() {
 			Game.controls.down ||
 			player.destination) {
 
-		GAME.DRAW = true;
+		GAME.DRAW = 2;
 
 	}
 

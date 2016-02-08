@@ -62,10 +62,24 @@
     //Equipaggiamento
     this.wear = {
       'HEAD':null,
-      'BODY':null,
+      'ARMOUR':null,
       'LEFT_HAND':null,
       'RIGHT_HAND':null,
       'BOOTS':null,
+      'GLOVES':null,
+      'CLOAK':null,
+      'RING_1':null,
+      'RING_2':null
+    };
+
+    this.equip_item = {
+      'HEAD':null,
+      'ARMOUR':null,
+      'LEFT_HAND':null,
+      'RIGHT_HAND':null,
+      'BOOTS':null,
+      'GLOVES':null,
+      'CLOAK':null,
       'RING_1':null,
       'RING_2':null
     };
@@ -141,10 +155,16 @@
 
   }
 
+//===========================================================
+//========================= DRAW ============================
+//===========================================================
   //Se passati dei parametri disegna il personaggio in quelle coordinate, altrimenti lo disegna al centro
   Player.prototype.draw = function() {
     //Image player
     context.drawImage(this.img, this.x - GAME.CAMERA.xView, this.y - GAME.CAMERA.yView);
+    for(var i in this.wear) {
+      if(this.wear[i]) { context.drawImage(this.wear[i], this.x - GAME.CAMERA.xView, this.y - GAME.CAMERA.yView); }
+    }
 
     //Name Player
     context.font="12px sans-serif";
@@ -152,9 +172,76 @@
     context.fillText(this.name, (this.x + (context.measureText(this.name).width/2)) - GAME.CAMERA.xView, this.y - GAME.CAMERA.yView);
   }
 
+//===========================================================
+//======================== EQUIP ============================
+//===========================================================
+  //Equipaggia gli oggetti in base al tipo
+  Player.prototype.equip = function(item) {
+    if(this.inventory[item]) {
+      var obj = GAME.INFO.OBJECTS[ this.inventory[item] ];
+      var type = Object_Types[ this.inventory[item] ];
+
+      //Creazione immagine
+      this.wear[type];
+      this.wear[type] = new Image();
+      this.wear[type].onload = function () {};
+      this.wear[type].src = PATH.EQUIPS + obj.wear + '.png';
+
+      //Segno l'oggetto come equipaggiato
+      this.equip_item[type] = item;
+
+      //Aggiornamento dell'inventario se aperto
+      if(WINDOWS['INVENTORY']) {
+        Interface.createInventory(WINDOWS['INVENTORY'].id , player.inventory , 2);
+      }
+      //Aggiornamento della scheda se aperta
+      if(WINDOWS['CHARACTER']) {
+        Interface.createCharacter(WINDOWS['CHARACTER'].id);
+      }
+
+      GAME.DRAW = 60;
+    }
+  }
+
+//===========================================================
+//======================= UNEQUIP ===========================
+//===========================================================
+  //Equipaggia gli oggetti in base al tipo
+  Player.prototype.unequip = function(item) {
+    if(this.inventory[item]) {
+      var obj = GAME.INFO.OBJECTS[ this.inventory[item] ];
+      var type = Object_Types[ this.inventory[item] ];
+
+      //Distruzione immagine
+      this.wear[type] = null;
+
+      //Segno l'oggetto come disequipaggiato
+      this.equip_item[type] = null;
+
+      //Aggiornamento dell'inventario se aperto
+      if(WINDOWS['INVENTORY']) {
+        Interface.createInventory(WINDOWS['INVENTORY'].id , player.inventory , 2);
+      }
+      //Aggiornamento della scheda se aperta
+      if(WINDOWS['CHARACTER']) {
+        Interface.createCharacter(WINDOWS['CHARACTER'].id);
+      }
+
+      GAME.DRAW = 60;
+    }
+  }
+
+//===========================================================
+//===================== CHANGE IMG ==========================
+//===========================================================
+
   Player.prototype.changeImg = function(img) {
     this.img = this.path + img;
   }
+
+//===========================================================
+//==================== SEND POSITION ========================
+//===========================================================
 
   Player.prototype.sendPosition = function() {
 
@@ -176,10 +263,18 @@
 	//console.log('SEND' , ClientMessageTypes.MOVE, Math.round(this.x), Math.round(this.y));
   }
 
+//===========================================================
+//=================== CHANGE POSITION =======================
+//===========================================================
+
   Player.prototype.changePosition = function(x , y) {
   	this.x = x;
   	this.y = y;
   }
+
+//===========================================================
+//=================== GO TO POSITION ========================
+//===========================================================
 
   Player.prototype.goToPosition = function (x , y) {
     //Setto la destinazione da raggiungere
@@ -188,6 +283,10 @@
       'y': GAME.CAMERA.yView + (y - this.y)
     }
   }
+
+//===========================================================
+//=================== CHECK COLLISION =======================
+//===========================================================
 
   Player.prototype.CheckCollision = function() {
     var keys = Object.keys(GAME.ITEMS);
@@ -211,6 +310,10 @@
   	}
   	return true;
   }
+
+//===========================================================
+//=================== CHECK ELEMENT  ========================
+//===========================================================
 
   Player.prototype.checkElementPosition = function(x, y) {
     x = GAME.CAMERA.xView + x;
@@ -244,6 +347,10 @@
     return false;
   }
 
+//===========================================================
+//==================== CHECK PLAYERS ========================
+//===========================================================
+
   Player.prototype.checkPlayersPosition = function(x, y) {
     x = GAME.CAMERA.xView + x;
     y = GAME.CAMERA.yView + y;
@@ -263,6 +370,10 @@
     }
     return false;
   }
+
+//===========================================================
+//===================== CONTEXT MENU ========================
+//===========================================================
 
   Player.prototype.showContextMenu = function(x, y , mode) {
     if(WINDOWS['CONTEXT_MENU']) {
@@ -286,7 +397,6 @@
                 //==================================
                 //========== MULTI ITEM ============
                 //==================================
-                console.log('multi item')
                 //Lock
                 connection.send(JSON.stringify({
               		mt : ClientMessageTypes.LOCK_DROP_ITEM,
@@ -317,6 +427,9 @@
 
 })();
 
+//===========================================================
+//===================== BUILD IMAGE  ========================
+//===========================================================
 
 //Costruisce l'src per le immagini dei giocatori
 buildImage = function(race , variant , gender) {

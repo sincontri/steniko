@@ -19,7 +19,8 @@ var MOVE_INTERVAL = 50; //ogni quanti ms mando il messaggio della mia posizione
 var PATH = {
   'ITEMS' : "icons/dc-dngn/",
   'OBJECTS' : "icons/item/",
-  'PLAYERS' : "icons/player/base/"
+  'PLAYERS' : "icons/player/base/",
+  'EQUIPS' : "icons/player/"
 };
 
 /* CONFIGURATION MENU */
@@ -64,7 +65,15 @@ var CAMERA_MODE = 2;
 //=========================================================
 
 var Object_Types = {
-  1: 'ARMOUR'
+  1: 'ARMOUR',
+  2: 'CLOAK',
+  3: 'ARMOUR',
+  4: 'GLOVES'
+}
+
+var Object_Values = {
+  'p' : 'Protezione',
+  'e' : 'Ingombro'
 }
 
 var Race = {
@@ -201,7 +210,8 @@ var ServerMessageTypes = {
   UPDATE_DROP_ITEMS: 13,
   PLAYER_INVENTORY: 14,
   LOCK_OK: 15,
-  LOCK_FAIL: 16
+  LOCK_FAIL: 16,
+  UPDATE_SPEED: 17
 };
 
 var ClientMessageTypes = {

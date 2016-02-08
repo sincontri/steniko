@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
 		var draw = function() {
 
       checkDraw();
-      if(GAME.DRAW === false) {
+      if(GAME.DRAW === 0) {
         context.restore();
         return false;
       }
@@ -168,7 +168,12 @@ document.addEventListener('DOMContentLoaded', function() {
       Drawer.Vision();
       Drawer.Hud();
 
-      GAME.DRAW = false;
+      if(GAME.DRAW > 0) {
+        GAME.DRAW--;
+      } else {
+        GAME.DRAW = 0;
+      }
+
 		}
 
 //=========================================================

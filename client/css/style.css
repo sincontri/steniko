@@ -28,7 +28,7 @@ body { background: grey; color:white; font:11px Tahoma, sans-serif; }
 /* INVENTORY */
 .inventory_bag { position:relative; width:100%; height:100%; overflow-y: scroll; }
 .inventory_bag div { border: 1px solid #fff; width:38px; height:38px; float:left; }
-#equip_info { width:100px; height:100%; position:absolute; top:0px; left:101%; background:black; border:1px solid #fff; }
+#equip_info { width:100px; height:100%; position:absolute; top:0px; left:101%; background:black; border:1px solid #fff; font-size:10px; color:white; }
 
 .buttonMenu { line-height:40px; font-size:16px; color:white; background:grey; cursor:pointer; }
 
@@ -53,7 +53,16 @@ body { background: grey; color:white; font:11px Tahoma, sans-serif; }
 
 .character { font-size:9px; }
 .slot { background:black; width:32px; height:32px; border:1px solid #fff; }
+/* NORMAL SLOT */
+.item_slot { float:left; }
 .item_slot img { width:32px; height:32px; }
-.item_slot:hover, .item_slot_selected { background:grey; }
+.item_slot:hover { background:grey; }
+.item_slot_selected { background:grey; float:left; }
+
+/* EQUIP SLOT */
+.item_slot_equip { float:left; }
+.item_slot_equip img { width:30px; height:30px; border:1px solid white; }
+.item_slot_equip:hover { background:grey; }
+.item_slot_equip_selected { background:grey; float:left; }
 
 #systemInfo { width:300px; height:150px; background:black; border:1px solid #fff; color:red; font-size:10px; position:absolute; bottom:40px; right:0px; z-index:100; }

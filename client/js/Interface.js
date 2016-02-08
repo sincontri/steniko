@@ -39,22 +39,51 @@ var Interface = {
   },
 
   setElementWithEquipSlot : function(text) {
+console.log(player.wear[text])
+
     var div = document.createElement('div');
     var style = {};
     style.class = ['slot'];
-    style.text = text;
+
+    //se non è equipaggiato nulla mostra il nome dello slot
+    if(!player.wear[text]) {
+      style.text = text;
+    }
+
     this.setStyle(div, style);
+
+    //se è equipaggiato qualcosa mostra l'immagine
+    if(player.wear[text]) {
+      div.appendChild( player.wear[text] );
+    }
+
     return div;
   },
 
   setElementWithDropButtons : function(text , valueCallback) {
     var div = document.createElement('div');
     var style = {};
-    style.class = ['hoverButton' , 'takeall_button'];
+    if(valueCallback === 1) {
+      style.class = ['hoverButton' , 'takeall_button'];
+    } else {
+      style.class = ['hoverButton' , 'takethis_button'];
+    }
     style.callback = 'takeItems';
     style.value = valueCallback;
     style.text = text;
     this.setStyle(div , style);
+    return div;
+  },
+
+  setElementWithButton : function(text, callback , valueCallback) {
+    var div = document.createElement('div');
+    var style = {};
+    style.class = ['hoverButton' , 'txt_center'];
+    style.callback = callback;
+    style.value = valueCallback;
+    style.text = text;
+    this.setStyle(div , style);
+    return div;
   },
 
   //=========================================================
@@ -172,15 +201,12 @@ var Interface = {
     var div_3 = document.createElement('div');
     var style = {};
     style.class = ['absolute' , 'handle' , 'txt_center'];
-    style.callback = 'destroyWindow';
-    style.value = [id];
     style.text = title;
     style.id = id + '_title';
     this.setStyle(div_3, style);
 
     var div_4 = document.createElement('div');
     var style = {};
-    style.callback = 'destroyWindow';
     style.id = id + '_body';
     this.setStyle(div_4, style);
 
@@ -414,16 +440,47 @@ var Interface = {
 
     for(var i in storage) {
       if(GAME.INFO.OBJECTS[storage[i]]) {
+        var setted = false;
         var slot = document.createElement('div');
-        //If can you take item, then i will set the element
+        //Se puo prendere l'oggetto allora setto le classi
         if(get) {
-          var style = {};
-          style.id = 'item_slot_' + i;
+          //Inventory
+          if(get === 2) {
+            //Listener for equip the item
+            slot.ondblclick = function () {
+              EquipItem(i);
+            }
+
+            //Se l'oggetto è equipaggiato lo segno con un bordo
+            for(var j in player.equip_item) {
+              if(player.equip_item[j]) {
+                if(player.equip_item[j] === i) {
+                  var style = {};
+                  style.id = 'item_slot_' + i;
+                  style.class = ['item_slot_equip'];
+                  style.callback = 'selectItem';
+                  style.value = [i , get];
+                  this.setStyle(slot , style);
+                  setted = true;
+                }
+              }
+            }
+          }
+          //Se non è un oggetto equipaggiato lo setto come normal slot
+          if(!setted) {
+            var style = {};
+            style.id = 'item_slot_' + i;
+            style.class = ['item_slot'];
+            style.callback = 'selectItem';
+            style.value = [i , get];
+            this.setStyle(slot , style);
+          }
+
+        } else {
           style.class = ['item_slot'];
-          style.callback = 'selectItem';
-          style.value = [i , get];
           this.setStyle(slot , style);
         }
+
         slot.appendChild( this.setElementWithImg('div' , PATH.OBJECTS + GAME.INFO.OBJECTS[storage[i]].icon + '.png') );
         div.appendChild(slot);
       }
@@ -498,8 +555,9 @@ var Interface = {
     style.style = ['width:40px'];
     this.setStyle(td, style);
 
-    td.appendChild( this.setElementWithEquipSlot('HAND') );
-    td.appendChild( this.setElementWithEquipSlot('BODY') );
+    td.appendChild( this.setElementWithEquipSlot('LEFT_HAND') );
+    td.appendChild( this.setElementWithEquipSlot('ARMOUR') );
+    td.appendChild( this.setElementWithEquipSlot('CLOAK') );
 
     tr.appendChild(td);
 
@@ -522,9 +580,10 @@ var Interface = {
     style.style = ['width:40px'];
     this.setStyle(td, style);
 
-    td.appendChild( this.setElementWithEquipSlot('HAND') );
-    td.appendChild( this.setElementWithEquipSlot('RING') );
-    td.appendChild( this.setElementWithEquipSlot('RING') );
+    td.appendChild( this.setElementWithEquipSlot('RIGHT_HAND') );
+    td.appendChild( this.setElementWithEquipSlot('GLOVES') );
+    td.appendChild( this.setElementWithEquipSlot('RING_1') );
+    td.appendChild( this.setElementWithEquipSlot('RING_2') );
 
     tr.appendChild(td);
     table.appendChild(tr);
@@ -563,6 +622,15 @@ var Interface = {
 
   removeBroadcast : function() {
     document.getElementById('messageInterface').innerHTML = '';
+  },
+
+  //=========================================================
+  //==================== INSERT LOADER ======================
+  //=========================================================
+  insertLoader : function() {
+    var img = document.createElement('img');
+    img.src = 'img/loader.gif';
+    document.getElementById('messageInterface').appendChild(img);
   },
 
   //=========================================================
@@ -628,297 +696,6 @@ var Interface = {
   }
 }
 
-
-
-//====================================================================
-//======================= INTERFACE BUILDER ==========================
-//====================================================================
-
-var Interface_old = {
-
-//=========================================================
-//===================== CHECK WINDOW ======================
-//=========================================================
-  checkWindow : function(id) {
-    if(document.getElementById(id)) {
-      return false;
-    } else {
-      return true;
-    }
-  },
-
-  checkValues : function(data , id) {
-    if(Object.keys(data).length === 0 || id.length === 0) {
-      return false;
-    }
-    return true;
-  },
-//=========================================================
-//==================== BAR MENU BOTTOM ====================
-//=========================================================
-  createBar : function(id) {
-    var text = '<div id="' + id + '" class="absolute window interface_bar" style="border-right:0px;border-left:0px;">';
-
-    for(var i = 0 ; i < MENU_BAR.length ; i++) {
-      text += '<div onclick="' + MENU_BAR[i].listener + '();" id="' + MENU_BAR[i].id + '" class="interface_bar_voice txt_center fa ' + MENU_BAR[i].icon + '" style="line-height:40px;"></div>';
-    }
-    text += '</div>';
-
-    document.getElementById('interface').innerHTML += text;
-
-    /*for(var i = 0 ; i < MENU_BAR.length ; i++) {
-      Listener.create(MENU_BAR[i].id , MENU_BAR[i].listener);
-    }*/
-  },
-
-//=========================================================
-//==================== WINDOW CREATE ======================
-//=========================================================
-
-  createWindow : function(id , title, width, height) {
-    if(document.getElementById(id)) {
-      destroyWindow(id);
-    }
-
-    var text = '<div id="' + id + '" class="draggable resizeable absolute window" style="width:' + width + 'px;height:' + height + 'px;top:50px;left:50px;">';
-    text += '<div onclick="destroyWindow(\'' + id + '\')" id="' + id + '_close" class="absolute closeWindow txt_center fa fa-close" style="z-index:70;"></div>';
-    text += '<div id="' + id + '_title" class="absolute handle txt_center"> ' + title + ' </div>';
-    text += '<div id="' + id + '_body"></div>';
-    text += '</div>';
-    document.getElementById('interface').innerHTML += text;
-    //Creazione listener per distruttore
-    //Listener.create(id + '_close' , 'destroyWindow' , id);
-
-    return {
-      id:id,
-      body:id + '_body',
-      title:title,
-      width:width,
-      height:height
-    };
-  },
-
-
-
-  //Crea l'interfaccia HTML Per scegliere l'unita a inizio gioco
-  chooseUnit : function(data , id) {
-    var box = document.getElementById(id);
-    var text = '<table cellpadding="0" cellspacing="0" class="fullWidth box">';
-    text += '<tr class="infoRow"><td></td> <td>NAME</td> <td>HP</td> <td>ENERGY</td> <td>MAP</td></tr>';
-
-    for(var i = 0 ; i < data.length ; i++) {
-
-      if(CHOOSE_UNIT === data[i].id) {
-        text += '<tr class="menuRow_active">';
-      } else {
-        text += '<tr onclick="Listener.chooseUnit('+data[i].id+');" class="menuRow">';
-      }
-
-      text += '<td> <img src="' + buildImage(data[i].race_id , data[i].variant_id , data[i].gender_id) + '"/></td>';
-      text += '<td>' + data[i].unitName + '</td><td>' + data[i].hp + '</td><td>' + data[i].energy + '</td>';
-      text += '<td>' + data[i].mapName + '</td></tr>';
-    }
-
-    text += '<tr class="menuButton"><td align="center" colspan="5"><div class="buttonMenu" id="chooseUnit_button">Gioca</div></td></tr></table>';
-
-    box.innerHTML = text;
-
-    //Creazione listener per il button
-    Listener.create('chooseUnit_button' , 'chooseUnit_SEND');
-  },
-
-
-
-  //Selezione oggetto
-  selectionObject : function(id) {
-    var data = SELECTION_MOUSE.info;
-    if(!this.checkValues(data, id)) {
-      return false;
-    }
-
-    //icon: "armour/robe1" id: 1 name: "Robe" real_name: "Robe" type: 1 values: "{"p":2,"e":1}" weight: 2
-    var box = document.getElementById(id + '_body');
-    var text = '<table cellpadding="0" cellspacing="0" class="fullWidth">';
-    text += '<tr><td><img src="' + PATH.OBJECTS + data.icon + '.png"/></td>';
-    text += '<td>' + Object_Types[data.type] + '</td></tr>';
-    if(data.values.p) { text += '<tr><td>Protezione</td><td>' + data.values.p + '</td></tr>'; }
-    if(data.values.e) { text += '<tr><td>Ingombro</td><td>' + data.values.e + '</td></tr>'; }
-    text += '<tr><td>Peso</td><td>' + data.weight + '</td></tr></table>';
-
-    box.innerHTML = text;
-    document.getElementById(id + '_title').innerHTML = data.name;
-  },
-
-
-
-  //Selezione giocatore
-  selectionPlayer : function(id) {
-    var data = SELECTION_MOUSE.info;
-    if(!this.checkValues(data, id)) {
-      return false;
-    }
-
-    var box = document.getElementById(id + '_body');
-    var text = '<table cellpadding="0" cellspacing="0" class="fullWidth relative">';
-    text += '<tr><td><img src="' + data.img.src + '"/></td>';
-    text += '<td>' + data.name + '</td></tr>';
-    text += '<tr><td>HP</td><td> <div class="prbar"><div id="hp_bar_' + data.uid + '" class="hp_color"></div></div> </td></tr>';
-    text += '<tr><td>ENERGY</td><td> <div class="prbar"><div id="energy_bar_' + data.uid + '" class="energy_color"></div></div> </td></tr>';
-    text += '<tr><td>Razza</td><td>' + WS_Race[data.race] + '</td></tr>';
-    text += '<tr><td>Velocita</td><td>' + data.speed + '</td></tr>';
-
-
-    box.innerHTML = text;
-    document.getElementById(id + '_title').innerHTML = data.name;
-    document.getElementById('hp_bar_' + data.uid).style.width = Math.round((data.current_hp * 100)/data.hp);
-    document.getElementById('energy_bar_' + data.uid).style.width = Math.round((data.current_energy * 100)/data.energy);
-  },
-
-  createInventory : function(id , storage , get) {
-    if(!get) {
-      document.getElementById(id + '_title').innerHTML += 'READONLY';
-    }
-    var box = document.getElementById(id + '_body');
-
-    var text = '<div class="inventory_bag relative">';
-
-    for(var i in storage) {
-      if(GAME.INFO.OBJECTS[storage[i]]) {
-        if(get) {
-          text += '<div id="item_slot_' + i + '" class="item_slot" onclick="selectItem(' + i + ',' + get + ')"><img src="' + PATH.OBJECTS + GAME.INFO.OBJECTS[storage[i]].icon + '.png"/></div>';
-        } else {
-          text += '<div><img src="' + PATH.OBJECTS + GAME.INFO.OBJECTS[storage[i]].icon + '.png"/></div>';
-        }
-
-      }
-    }
-    text += '</div>';
-
-    if(get === 1) {
-      text += '<div class="hoverButton takeall_button" onclick="takeItems(1)">Prendi Tutto</div><div class="hoverButton takethis_button" onclick="takeItems(0)">Prendi</div>';
-    }
-
-    if(get === 2) {
-      text += '<div id="equip_info"></div>';
-    }
-
-    box.innerHTML = text;
-  },
-
-  createCharacter : function(id) {
-    var box = document.getElementById(id + '_body');
-
-    var text = '<table cellpadding="0" cellspacing="0" class="character relative totale">';
-
-    text += '<tr style="height:20px;"><td colspan="3" class="txt_center">' + player.name + '</td></tr>';
-    //TOP
-    text += '<tr style="height:32px;"><td colspan="3" align="center"><div class="slot">HEAD</div></td></tr>';
-    //LEFT
-    text += '<tr><td style="width:40px;" align="center"><div class="slot">HAND</div> <div class="slot">BODY</div> </div></td>';
-    //PLAYER
-    text += '<td align="center"><img src="' + player.img.src + '" width="64" height="64"/></td>';
-    //RIGHT
-    text += '<td style="width:40px;" align="center"><div class="slot">HAND</div> <div class="slot">RING</div>  <div class="slot">RING</div> </td></tr>';
-    //BOTTOM
-    text += '<tr style="height:32px;"><td colspan="3" align="center"><div class="slot">BOOTS</div> </td></tr>';
-    text += '</table>';
-
-    box.innerHTML = text;
-  },
-
-  createContextMenu : function(id, width, x, y, mode) {
-    if(document.getElementById(id)) {
-      destroyWindow(id);
-    }
-
-    var text = '<div id="' + id + '" class="absolute window" style="width:' + width + 'px;top:' + Math.round(y) + 'px;left:' + Math.round(x) + 'px;">';
-    text += '<div id="' + id + '_body"><table cellpadding="0" cellspacing="0" class="totale">';
-
-    if(mode) {
-      for(var i in CONTEXT_MENU[mode]) {
-        text += '<tr><td onclick="' + CONTEXT_MENU[mode][i].callback + '()" class="hoverButton">' + CONTEXT_MENU[mode][i].name + '</td></tr>';
-      }
-    }
-
-    text += '</table></div>';
-    text += '</div>';
-    document.getElementById('interface').innerHTML += text;
-
-    return {
-      id:id,
-      body:id + '_body',
-      width:width
-    };
-  },
-
-  insertBroadcast : function(string) {
-    document.getElementById('messageInterface').innerHTML = string;
-  },
-
-  removeBroadcast : function() {
-    document.getElementById('messageInterface').innerHTML = '';
-  },
-
-  startHUD : function() {
-    document.getElementById('player_HP').style.visibility = 'visible';
-    document.getElementById('player_ENERGY').style.visibility = 'visible';
-
-    $("#player_HP").knob({
-      'min':0,
-      'max':player.hp,
-      'readOnly':true,
-      'width':180,
-      'height':180,
-      'bgColor':'black',
-      'fgColor':'#66CC66',
-      'displayInput':true,
-      'thickness':'.5',
-      'displayPrevious':true,
-      'angleOffset':-125,
-      'angleArc':250,
-      change : function (value) {
-        //console.log("change : " + value);
-      },
-      release : function (value) {
-        //console.log(this.$.attr('value'));
-        //console.log("release : " + value);
-      },
-      cancel : function () {
-        //console.log("cancel : ", this);
-      },
-      draw : function () {
-      }
-    });
-    $("#player_ENERGY").knob({
-      'min':0,
-      'max':player.energy,
-      'readOnly':true,
-      'width':120,
-      'height':120,
-      'bgColor':'black',
-      'fgColor':'#00FFFF',
-      'displayInput':false,
-      'thickness':'.45',
-      'displayPrevious':true,
-      'angleOffset':-125,
-      'angleArc':250,
-      change : function (value) {
-        //console.log("change : " + value);
-      },
-      release : function (value) {
-        //console.log(this.$.attr('value'));
-        //console.log("release : " + value);
-      },
-      cancel : function () {
-        //console.log("cancel : ", this);
-      },
-      draw : function () {
-      }
-    });
-  }
-
-};
-
 //====================================================================
 //====================== LISTENER INTERFACE ==========================
 //====================================================================
@@ -958,8 +735,9 @@ function chooseUnit_SEND() {
     mt:ClientMessageTypes.CHOOSE_UNIT,
     i:CHOOSE_UNIT
   }));
-  destroyWindow('chooseUnit');
-  Interface.insertBroadcast('Caricamento in corso ...')
+  destroyWindow([WINDOWS['CHOOSE_UNIT'].id]);
+  //Interface.insertBroadcast('Caricamento in corso ...')
+  Interface.insertLoader();
 }
 
 
@@ -967,8 +745,9 @@ function chooseUnit_SEND() {
 //============================ EVENTS ================================
 //====================================================================
 
-function destroyWindow(param) {
+function destroyWindow(params) {
 
+  var param = params[0];
   var element = document.getElementById(param);
   if(element) {
     element.parentNode.removeChild(element);
@@ -1013,16 +792,16 @@ function createDropList(storage) {
   if(!WINDOWS['DROP_LIST']) {
     GAME.SELECT_ITEM = {};
     WINDOWS['DROP_LIST'] = Interface.createWindow('drop_list' , 'OBJECT LIST' , 202 , 282);
+    Interface.createInventory(WINDOWS['DROP_LIST'].id , storage , 1);
   }
-  Interface.createInventory(WINDOWS['DROP_LIST'].id , storage , true);
 }
 
 //Crea una droplist di sola lettura (in caso di lock di un altro giocatore)
 function createDropList_READONLY(storage) {
   if(!WINDOWS['DROP_LIST']) {
     WINDOWS['DROP_LIST'] = Interface.createWindow('drop_list' , 'OBJECT LIST' , 202 , 282);
+    Interface.createInventory(WINDOWS['DROP_LIST'].id , storage);
   }
-  Interface.createInventory(WINDOWS['DROP_LIST'].id , storage , false);
 }
 
 //Funzione di callback in caso di raccolta oggetto
@@ -1035,9 +814,37 @@ function getDroppableItem() {
   player.goToPosition(item_x , item_y);
 }
 
+function EquipItem(item) {
+  console.log('EquipItem' , item , player.inventory[item])
+  player.equip(item);
+}
+
+function UnEquipItem(item) {
+  console.log('UnEquipItem' , item , player.inventory[item])
+  player.unequip(item);
+}
+
+function DropDownItem(item) {
+  console.log('DropDownItem' , item)
+  /*connection.send(JSON.stringify({
+    mt : ClientMessageTypes.DROP_ITEM,
+    k : items,
+    i : SELECTION_MOUSE.item_id
+  }));*/
+}
+
+//============================================================================
+//========================== SELECTION ITEMS =================================
+//============================================================================
 //Permette di selezionare gli oggetti in caso di un multiitem
-function selectItem(select , get) {
+function selectItem(params) {
+  var select = params[0];
+  var get = params[1];
   var slot = document.getElementById('item_slot_' + select);
+
+//=========================================================
+//====================== DROP LIST ========================
+//=========================================================
   //Se droplist multiselezione
   if(get === 1) {
     if(slot.className !== 'item_slot_selected') {
@@ -1049,6 +856,9 @@ function selectItem(select , get) {
     }
   }
 
+//=========================================================
+//====================== INVENTORY ========================
+//=========================================================
   //Se inventario selezione di un solo oggetto per equip o buttare l'item
   if(get === 2) {
     for(var i in GAME.SELECT_ITEM) {
@@ -1058,7 +868,28 @@ function selectItem(select , get) {
     GAME.SELECT_ITEM[select] = true;
     slot.className = "item_slot_selected";
 
-    document.getElementById('equip_info').innerHTML = JSON.stringify(SELECTION_MOUSE.items[i]);
+
+    var info_object = GAME.INFO.OBJECTS[ player.inventory[select] ];
+    //Realizzazione slot info
+    var slot_info = document.getElementById('equip_info');
+    slot_info.innerHTML = '';
+
+    var div = document.createElement('div');
+    var src = PATH.OBJECTS + info_object.icon + '.png';
+
+    slot_info.appendChild( Interface.setElementWithImg('div' , src) );
+    slot_info.appendChild( Interface.setElementWithText('div' , info_object.name) );
+    slot_info.appendChild( Interface.setElementWithText('div' , 'Type : ' + Object_Types[info_object.type]) );
+    slot_info.appendChild( Interface.setElementWithText('div' , 'Weight : ' + info_object.weight) );
+
+    for(var i in info_object.values) {
+      slot_info.appendChild( Interface.setElementWithText('div' , Object_Values[i] + ' : ' + info_object.values[i]) );
+    }
+
+    //slot_info.appendChild( Interface.setElementWithText('div' , 'Weight : ' + info_object.weight) );
+    slot_info.appendChild( Interface.setElementWithButton('Equip' , 'EquipItem' , select) );
+    slot_info.appendChild( Interface.setElementWithButton('Drop' , 'DropDownItem' , select) );
+    //document.getElementById('equip_info').innerHTML = JSON.stringify(info_object);
   }
 }
 
@@ -1079,6 +910,17 @@ function takeItems(all) {
       k : items,
       i : SELECTION_MOUSE.item_id
     }));
+  }
+
+  //Scrittura sulla System Info
+  for(var i in items) {
+    SystemInfo.write('Hai preso : ' + GAME.INFO.OBJECTS[items[i]].name);
+  }
+
+  //Eliminazione dalla droplist
+  var elements = document.getElementsByClassName('item_slot_selected');
+  while(elements.length > 0) {
+    elements[0].parentNode.removeChild(elements[0]);
   }
 }
 
@@ -1109,7 +951,7 @@ function selectionItem(pathImage , info , item , i) {
   //this.showContextMenu(pre_x, pre_y, 'OBJECT');
   Drawer.Selector();
 
-  GAME.DRAW = true;
+  GAME.DRAW = 5;
 }
 
 function selectionPlayer(players) {
@@ -1126,7 +968,7 @@ function selectionPlayer(players) {
   //this.showContextMenu(x, y, 'PLAYER');
   //Drawer.Selector();
 
-  GAME.DRAW = true;
+  GAME.DRAW = 5;
 }
 
 function removeSelection() {
@@ -1135,7 +977,7 @@ function removeSelection() {
   if(WINDOWS['SELECTION_OBJECT']) {
     destroyWindow(WINDOWS['SELECTION_OBJECT'].id);
   }
-  GAME.DRAW = true;
+  GAME.DRAW = 5;
 }
 
 
